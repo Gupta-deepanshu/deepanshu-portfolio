@@ -1,0 +1,65 @@
+import { projects } from '../src/content/projects';
+import { expect, markIntroSeen, scrollToY, test } from './fixtures';
+
+test.beforeEach(async ({ page }) => {
+  await markIntroSeen(page);
+});
+
+test('home page shows name, role, experience and projects without waiting', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByRole('heading', { level: 1, name: 'Deepanshu Gupta' })).toBeVisible();
+  await expect(page.getByText('Senior Frontend Engineer').first()).toBeVisible();
+  await expect(page.locator('#experience')).toContainText('Accenture');
+  await expect(page.locator('#projects')).toContainText('Formsmith');
+});
+
+test('every project page loads', async ({ page }) => {
+  for (const p of projects) {
+    const res = await page.goto(`/projects/${p.slug}`);
+    expect(res?.status()).toBe(200);
+    await expect(page.getByRole('heading', { level: 1, name: p.title })).toBeVisible();
+  }
+});
+
+test('unknown project shows the not-found page', async ({ page }) => {
+  // With Partial Prerendering the static shell streams before notFound() runs, so
+  // the HTTP status can be 200; Next marks the page noindex and renders not-found.
+  await page.goto('/projects/does-not-exist');
+  await expect(page.getByRole('heading', { name: 'This reel is blank.' })).toBeVisible();
+  await expect(page.locator('meta[name="robots"][content*="noindex"]')).toHaveCount(1);
+});
+
+test('placeholder links show "Coming soon" instead of linking', async ({ page }) => {
+  await page.goto('/projects/formsmith');
+  const placeholders = page.locator('[data-placeholder]');
+  await expect(placeholders.first()).toBeVisible();
+  await expect(placeholders.first()).toContainText('Coming soon');
+  await expect(placeholders.first()).toHaveAttribute('aria-disabled', 'true');
+  // No anchor on the page points at the PLACEHOLDER sentinel.
+  expect(await page.locator('a[href*="PLACEHOLDER"]').count()).toBe(0);
+});
+
+test('carousel keyboard navigation moves between projects (desktop)', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/');
+  const section = page.locator('#projects');
+  const top = await section.evaluate((el) => el.getBoundingClientRect().top + window.scrollY);
+  await scrollToY(page, top + 200);
+  const carousel = page.getByRole('group', { name: 'Projects' });
+  await carousel.getByRole('button', { name: 'Next project' }).focus();
+  const live = carousel.locator('[aria-live="polite"]');
+  await expect(live).toContainText('Project 1 of 6');
+  await page.keyboard.press('ArrowRight');
+  await expect(live).toContainText('Project 2 of 6', { timeout: 5000 });
+  await page.keyboard.press('ArrowRight');
+  await expect(live).toContainText('Project 3 of 6', { timeout: 5000 });
+  await page.keyboard.press('ArrowLeft');
+  await expect(live).toContainText('Project 2 of 6', { timeout: 5000 });
+});
+
+test('mobile shows the swipe carousel, not the pinned gallery', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.goto('/');
+  await expect(page.locator('[data-gl-slot="projects"]')).toHaveCount(0);
+  await expect(page.locator('#projects li[data-index]')).toHaveCount(6);
+});

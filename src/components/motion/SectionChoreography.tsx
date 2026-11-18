@@ -77,7 +77,8 @@ export function SectionChoreography({ id, className, children, labelledBy, as: T
             onSplit: (self) =>
               gsap.fromTo(
                 self.lines,
-                { opacity: 0.18, y: 12 },
+                // 0.45 keeps even the dimmed lines above 3:1 contrast (WCAG large text)
+                { opacity: 0.45, y: 12 },
                 {
                   opacity: 1,
                   y: 0,

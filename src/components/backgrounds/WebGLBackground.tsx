@@ -44,7 +44,8 @@ export function WebGLBackground({ kind, staticClassName, desktopOnly = false, sl
     <div ref={ref} data-bg="" data-gl-slot={slotId} data-gl-state={slot} aria-hidden="true" className="section-bg">
       <div className={cn('absolute inset-0', staticClassName)} data-animate={!reduce && !enabled ? '' : undefined} />
       {enabled && slot !== 'released' && (
-        <div className="absolute inset-0">
+        // screen blend: the canvas only adds light, so its black clear colour never hides the gradient
+        <div className="absolute inset-0 mix-blend-screen">
           {kind === 'silk' ? (
             <Silk
               color="#2a2630"

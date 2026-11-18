@@ -62,10 +62,18 @@ export function PinnedGallery({ onFail }: { onFail: () => void }) {
           const next = Math.round(self.progress * LAST);
           setActive((prev) => (prev === next ? prev : next));
         },
+        // This pin is created after hydration (it only exists on desktop), so the
+        // triggers of the sections below it were measured without its spacer.
+        // Refresh it first, then re-measure everything in page order.
+        refreshPriority: 1,
       });
+      ScrollTrigger.sort();
+      ScrollTrigger.refresh();
       return () => {
         triggerRef.current?.kill();
         triggerRef.current = null;
+        // Spacer gone (list view / mobile): re-measure the sections below.
+        requestAnimationFrame(() => ScrollTrigger.refresh());
       };
     },
     { scope: stageRef },

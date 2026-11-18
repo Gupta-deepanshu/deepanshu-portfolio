@@ -69,7 +69,7 @@ export default async function ProjectPage({ params }: PageProps<'/projects/[slug
             </div>
 
             <div className="relative mt-16 aspect-[16/10] overflow-hidden rounded-2xl border border-line bg-raised" data-parallax="0.04">
-              <Image src={media.poster} alt={project.posterAlt} fill priority sizes="(min-width: 1400px) 1300px, 100vw" className="object-cover" />
+              <Image src={media.poster} alt={project.posterAlt} fill preload fetchPriority="high" sizes="(min-width: 1400px) 1300px, calc(100vw - 2rem)" quality={70} className="object-cover" />
               {media.video.length > 0 && (
                 <video className="absolute inset-0 h-full w-full object-cover motion-reduce:hidden" autoPlay muted loop playsInline preload="metadata" poster={media.poster} aria-hidden="true">
                   {media.video.map((v) => (
