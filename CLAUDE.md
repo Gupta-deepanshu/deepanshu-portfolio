@@ -8,15 +8,21 @@ Dark, cinematic, scroll-driven "studio" feel (inspired by alche.studio, brandapp
 - `pnpm build` / `pnpm start` — production build / serve
 - `pnpm typecheck` — `tsc --noEmit` (strict)
 - `pnpm lint` — ESLint
+- `pnpm test:e2e` — Playwright smoke tests; `pnpm shots` — screenshots to `artifacts/`; `pnpm lighthouse` — mobile Lighthouse report
 - Run typecheck + lint after every major piece; keep both passing.
 
 ## Stack
 - Next.js (App Router, current stable), TypeScript strict, Tailwind CSS v4, static where possible, deploy to Vercel. pnpm.
-- Lenis smooth scroll (enhances native scroll: scrollbar, keyboard, anchors, screen readers must keep working). Driven from Motion's frame loop so Lenis, Motion and backgrounds share one rAF.
-- Motion (`motion/react`) for scroll-linked animation, reveals, layout and page transitions.
+- Lenis smooth scroll (enhances native scroll: scrollbar, keyboard, anchors, screen readers must keep working), using the official Lenis + ScrollTrigger setup: `lenis.on('scroll', ScrollTrigger.update)`, Lenis `raf` driven by `gsap.ticker`, `lagSmoothing(0)`.
+- **GSAP + ScrollTrigger (+ SplitText)** own everything scroll-driven: pinning/scrubbing the projects carousel, section entrance/exit choreography, line-by-line text reveals, background transitions. Always via `useGSAP` (scoped, auto cleanup). Reduced motion via `gsap.matchMedia()`.
+- **Motion** (`motion/react`) owns component/state animation: hovers, buttons, toggles, toasts, list/carousel view switch, page transitions, and Kokonut / React Bits components that depend on it.
+- **Never animate the same element with both libraries** (wrap: Motion on outer, GSAP on inner).
+- SplitText must stay accessible (original text via `aria-label`, split pieces `aria-hidden`) and revert on resize/unmount.
 - shadcn CLI to vendor components into the repo: React Bits (`@react-bits/<Name>-TS-TW`), Kokonut UI (`@kokonutui/<slug>`).
-- React Bits backgrounds are raw WebGL2 (no ogl/three needed). Avoid React Bits components that pull in GSAP.
-- **Ask before adding any dependency** not already agreed (e.g. GSAP).
+- React Bits backgrounds are raw WebGL2 (no ogl/three needed).
+- Projects carousel = adapted React Bits Circular Gallery (WebGL posters/videos only; wheel/drag removed on desktop; rotation driven by pinned, scrubbed, snapping ScrollTrigger; all text/links/counter are HTML overlay; counts in the WebGL budget). Mobile/reduced motion/no WebGL2 = swipeable HTML scroll-snap carousel.
+- Dev: Playwright (Chromium) for screenshots (to gitignored `artifacts/`), console-error checks, smoke tests and Lighthouse runs.
+- **Ask before adding any dependency** not already agreed.
 
 ## Content (edit without touching components)
 - `src/content/site.ts` — name, role, location, intro, summary, email, links (LinkedIn/GitHub/resume = PLACEHOLDER)
@@ -26,11 +32,11 @@ Dark, cinematic, scroll-driven "studio" feel (inspired by alche.studio, brandapp
 - Never show the phone number. Email via mailto.
 
 ## Structure
-Loader (<1 s, skippable, skipped for returning visitors & reduced motion) → Hero → About → Experience (self-drawing timeline) → Projects (pinned CSS-3D ring of 6, 1/6…6/6, "View as list", swipe carousel on mobile) → Skills (quiet marquee) → Contact → Footer.
+Loader (<1 s, skippable, skipped for returning visitors & reduced motion) → Hero → About → Experience (self-drawing timeline) → Projects (pinned Circular Gallery of 6, 1/6…6/6, "View as list", swipe carousel on mobile) → Skills (quiet marquee) → Contact → Footer.
 `/projects/[slug]`: featured = full case study; earlier = short template. Smooth page transitions.
 
 ## Section backgrounds
-- Hero, Projects, Contact: WebGL. About, Experience, Skills: CSS/SVG/noise.
+- WebGL: Hero (Silk), Projects carousel (Circular Gallery), Contact (Liquid Ether, desktop only). CSS/SVG/noise backgrounds: About, Experience, Projects (star vignette), Skills.
 - Animate only in/near viewport (IntersectionObserver); off-screen pauses rAF; far off-screen releases context. Max 2 WebGL contexts rendering at once.
 - Seamless blends between sections. Mobile: lower DPR, no cursor effects, CSS fallback for at least one WebGL section.
 - Reduced motion / no WebGL: static gradient per section. Never reduce text contrast — scrim behind text.
