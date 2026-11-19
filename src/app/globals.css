@@ -255,13 +255,6 @@ html[data-intro='skip'] .hero-fade {
   --my: 40%;
 }
 
-/* About: a soft spotlight that follows the pointer, warmed by scroll (--warm). */
-.bg-spotlight {
-  background:
-    radial-gradient(600px circle at var(--mx) var(--my), rgb(165 148 255 / calc(0.08 + var(--warm, 0) * 0.08)), transparent 60%),
-    radial-gradient(900px circle at 85% 20%, rgb(120 110 180 / 0.07), transparent 60%);
-}
-
 /* Experience: contour lines drifting sideways (transform only). */
 .contours {
   animation: contour-drift 40s ease-in-out infinite alternate;
@@ -411,4 +404,12 @@ html[data-intro='skip'] .hero-fade {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: -0.01em;
+}
+
+/* Reduced motion: the Hero/About stage doesn't stay fixed; it scrolls away with the
+   hero like any static background, so nothing sits behind About's text. */
+@media (prefers-reduced-motion: reduce) {
+  [data-stage-sticky] {
+    position: relative;
+  }
 }

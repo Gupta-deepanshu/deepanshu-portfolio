@@ -23,6 +23,10 @@
  * (same font, same positions), then the <h1> fades to opacity 0 — still in the DOM
  * for screen readers, search and selection. It tracks the <h1> every frame, so the
  * GSAP scroll-out still applies. On unmount the <h1> is shown again.
+ *
+ * Hero → About (see HeroStage): the canvas is sticky behind both sections. As the
+ * hero scrolls away (t: 0 → 1) the D glides into About's empty left column and
+ * shrinks, the camera turns along the wall (uTurn) and the glow cools (uMood).
  */
 import { useEffect, useRef } from 'react';
 import {
@@ -111,7 +115,7 @@ void main() {
 }`;
 
 const BACKGROUND = /* glsl */ `
-uniform sampler2D uVel; uniform vec2 uRes; uniform float uTime; uniform float uScroll; uniform vec2 uGlow;
+uniform sampler2D uVel; uniform vec2 uRes; uniform float uTime; uniform float uMood; uniform float uTurn; uniform vec2 uGlow;
 uniform sampler2D uText; uniform vec4 uTextRect; uniform float uTextAlpha;
 varying vec2 vUv;
 ${ROOM_CHUNK}
@@ -119,25 +123,27 @@ ${ROOM_CHUNK}
 vec3 room(vec2 uv) {
   float aspect = uRes.x / uRes.y;
   vec2 p = (uv - 0.5) * vec2(aspect, 1.0) * 1.15;
-  vec2 g = cylinderWall(p) * 6.5 + vec2(uTime * 0.02, uScroll * 4.0);
+  // uTurn: the camera turns along the wall as the page moves from Hero to About.
+  vec2 g = cylinderWall(p) * 6.5 + vec2(uTime * 0.02 + uTurn, 0.0);
   float major = gridLines(g, 0.25);
   float minor = gridLines(g * 5.0, 0.0);
 
   vec2 q = (uv - uGlow) * vec2(aspect, 1.0);
-  float glow = exp(-dot(q, q) * 7.0) * (1.0 - 0.55 * clamp(uScroll, 0.0, 1.0));
+  float glow = exp(-dot(q, q) * 7.0) * mix(1.0, 0.8, uMood);
   float halo = exp(-dot(q, q) * 1.8);
   float breathe = 0.85 + 0.15 * sin(uTime * 0.35);
   vec2 q2 = (uv - vec2(0.18, 0.15)) * vec2(aspect, 1.0);
   float low = exp(-dot(q2, q2) * 2.5);
 
-  vec3 violet = vec3(0.34, 0.19, 0.95);
+  // uMood 0 → 1: hero violet cools to a deep indigo for About.
+  vec3 violet = mix(vec3(0.34, 0.19, 0.95), vec3(0.15, 0.16, 0.62), uMood);
   vec3 col = vec3(0.010, 0.009, 0.020);
   col += violet * (glow * 0.3 * breathe + halo * 0.07) + vec3(0.03, 0.05, 0.22) * low * 0.18;
   col += (major * 0.32 + minor * 0.05) * (vec3(0.055, 0.05, 0.09) + violet * (glow * 0.9 + halo * 0.25));
   vec2 vig = uv - 0.5;
   col *= 1.0 - dot(vig, vig) * 0.9;
-  // Darker toward the bottom so the section dissolves into About without a seam.
-  col *= mix(0.25, 1.0, smoothstep(0.08, 0.6, uv.y));
+  // Slightly darker toward the bottom (under the intro text).
+  col *= mix(0.6, 1.0, smoothstep(0.0, 0.5, uv.y));
   return col;
 }
 
@@ -403,7 +409,8 @@ export default function GlassD({ paused = false, dpr = 1.25, interactive = true,
       uVel: { value: null },
       uRes: { value: res },
       uTime: { value: 0 },
-      uScroll: { value: 0 },
+      uMood: { value: 0 },
+      uTurn: { value: 0 },
       uGlow: { value: center },
       uText: { value: textTexture },
       uTextRect: { value: textRect },
@@ -458,6 +465,7 @@ export default function GlassD({ paused = false, dpr = 1.25, interactive = true,
     /* the heading: wait for fonts + its letter entrance, then copy it in */
     const h1 = document.querySelector<HTMLElement>(textSelector);
     const scroller = h1?.closest<HTMLElement>('[data-hero-content]') ?? null;
+    const heroSection = h1?.closest<HTMLElement>('section') ?? null;
     let disposed = false;
     const paintText = () => {
       if (!h1 || disposed) return;
@@ -585,8 +593,10 @@ export default function GlassD({ paused = false, dpr = 1.25, interactive = true,
           );
         }
         // The D sits on the heading's centre, ~2/3 of the viewport tall (like alche's A).
+        // Anchored to where the heading sits at the top of the page (+ scrollY), so the
+        // D stays put while the name scrolls up past it, then glides to About.
         const cx = ((b.left + b.width / 2 - c.left) / c.width) * 2 - 1;
-        const cy = 1 - ((b.top + b.height / 2 - c.top) / c.height) * 2;
+        const cy = 1 - ((b.top + window.scrollY + b.height / 2 - c.top) / c.height) * 2;
         target.x = cx * halfW;
         target.y = cy * halfH;
         const px = Math.min(window.innerHeight * 0.62, b.width * 0.55);
@@ -595,8 +605,22 @@ export default function GlassD({ paused = false, dpr = 1.25, interactive = true,
       const opacity = scroller ? parseFloat(scroller.style.opacity || '1') : 1;
       if (textReady) textAlpha = Math.min(1, textAlpha + dt / 0.6);
 
+      // Hero → About: 0 while the hero fills the screen, 1 once it has scrolled away.
+      const heroH = heroSection?.offsetHeight || window.innerHeight;
+      const lin = Math.min(1, Math.max(0, sy / heroH));
+      const t = lin * lin * (3 - 2 * lin);
+
+      // In About the D rests in the empty left column (wide screens) or small in the
+      // top-right corner (narrow ones), dimmer and out of the text's way.
+      const wide = camera.aspect >= 1.15;
+      const aboutX = wide ? -halfW * 0.7 : halfW * 0.58;
+      const aboutY = wide ? -halfH * 0.02 : halfH * 0.5;
+      const aboutScale = ((wide ? 0.36 : 0.24) * 2 * halfH) / 2.3;
+      const px3 = target.x + (aboutX - target.x) * t;
+      const py3 = target.y + (aboutY - target.y) * t;
+      const ps3 = target.scale + (aboutScale - target.scale) * t;
+
       // 3. the D: spin with momentum
-      const scroll = Math.min(1.5, sy / window.innerHeight);
       if (pointer.dx || pointer.dy) {
         // Horizontal drag turns it about Y, vertical about X (a trackball flick).
         omega.y += pointer.dx * 16;
@@ -621,14 +645,15 @@ export default function GlassD({ paused = false, dpr = 1.25, interactive = true,
         spin.slerp(rest, 1 - Math.exp(-dt * 0.9));
       }
       glass.quaternion.copy(spin);
-      glass.position.set(target.x, target.y + Math.sin(time * 0.6) * 0.04, 0.4);
-      glass.scale.setScalar(target.scale * (1 - scroll * 0.15));
-      center.set((target.x / halfW) * 0.5 + 0.5, (target.y / halfH) * 0.5 + 0.5);
+      glass.position.set(px3, py3 + Math.sin(time * 0.6) * 0.04, 0.4);
+      glass.scale.setScalar(ps3);
+      center.set((px3 / halfW) * 0.5 + 0.5, (py3 / halfH) * 0.5 + 0.5);
 
       // 4. background → target, copy to screen, glass on top
       bgMat.uniforms.uVel.value = vel[0].texture;
       bgMat.uniforms.uTime.value = time;
-      bgMat.uniforms.uScroll.value = scroll;
+      bgMat.uniforms.uMood.value = t;
+      bgMat.uniforms.uTurn.value = t * 1.6;
       bgMat.uniforms.uTextAlpha.value = textAlpha * opacity;
       run(bgMat, bgTarget);
       renderer.setRenderTarget(null);

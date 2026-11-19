@@ -67,7 +67,7 @@ The name is split into letters on the server and animated with CSS keyframes fro
 | Section | Background |
 |---|---|
 | Hero | Glass D scene (three.js, desktop): fluid sim + curved grid room + refractive D; static SVG D elsewhere |
-| About | CSS spotlight following the cursor |
+| About | The hero's room stays (sticky stage shared with the hero): the D moves to the left column, the camera turns, the glow cools; fades out into Experience |
 | Experience | SVG contour lines drifting by transform |
 | Projects | CSS star vignette; the reel itself is WebGL (same grid room) |
 | Skills | CSS dot grid lit by the cursor |

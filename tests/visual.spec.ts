@@ -11,6 +11,8 @@ async function revealAll(page: Page) {
 
 const OUT = 'artifacts/screenshots';
 const SECTIONS = ['top', 'about', 'experience', 'projects', 'skills', 'contact'];
+/** Hero and About share one sticky stage background that lives outside both sections. */
+const BG: Record<string, string> = { top: '[data-stage-bg]', about: '[data-stage-bg]' };
 
 for (const width of [1440, 375]) {
   test(`sections @ ${width}px`, async ({ page }) => {
@@ -25,7 +27,7 @@ for (const width of [1440, 375]) {
       await page.screenshot({ path: `${OUT}/${width}/${SECTIONS.indexOf(id) + 1}-${id}.png` });
       // Regression: every section's background must actually be showing once you're in it
       // (catches ScrollTriggers measured before the projects pin spacer existed).
-      const bgOpacity = await page.locator(`#${id} [data-bg]`).first().evaluate((el) => Number(getComputedStyle(el).opacity));
+      const bgOpacity = await page.locator(BG[id] ?? `#${id} [data-bg]`).first().evaluate((el) => Number(getComputedStyle(el).opacity));
       expect(bgOpacity, `#${id} background opacity`).toBeGreaterThan(0.5);
     }
     await page.goto('/projects/formsmith');

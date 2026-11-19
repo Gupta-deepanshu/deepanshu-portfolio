@@ -1,11 +1,15 @@
 import { site } from '@/content/site';
-import { CssBackground } from '@/components/backgrounds/CssBackground';
 import { SectionChoreography } from '@/components/motion/SectionChoreography';
 
 export function About() {
   return (
     <SectionChoreography id="about" labelledBy="about-title" className="relative isolate py-32 sm:py-44">
-      <CssBackground className="bg-spotlight" />
+      {/* The hero's room stays behind this section (HeroStage). The scrim keeps the text at
+          full contrast over it; the left column stays clear for the glass D. */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_75%_65%_at_62%_50%,rgb(10_10_11/0.6),transparent_78%)]"
+      />
       <div className="container-x grid gap-16 lg:grid-cols-12">
         <div className="lg:col-span-3">
           <p className="eyebrow" data-reveal="">

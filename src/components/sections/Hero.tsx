@@ -1,7 +1,5 @@
 import { site } from '@/content/site';
-import { WebGLBackground } from '@/components/backgrounds/WebGLBackground';
 import { HeroScroll } from './HeroScroll';
-import { StaticD } from './StaticD';
 
 /**
  * Hero. The name is split into letters on the server and revealed with CSS
@@ -17,8 +15,7 @@ export function Hero() {
   const words = site.name.split(' ');
   let i = 0;
   return (
-    <section id="top" aria-labelledby="hero-title" className="relative isolate flex min-h-svh flex-col pb-12 pt-28 sm:pb-14">
-      <WebGLBackground kind="glass" staticClassName="bg-hero-static" staticContent={<StaticD />} desktopOnly slotId="hero" />
+    <section id="top" aria-labelledby="hero-title" className="relative flex min-h-svh flex-col pb-12 pt-28 sm:pb-14">
       <HeroScroll className="flex flex-1 flex-col">
         <div className="container-x flex flex-1 flex-col items-center justify-center text-center">
           <h1

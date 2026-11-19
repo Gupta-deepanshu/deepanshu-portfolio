@@ -30,9 +30,11 @@ interface Props {
   /** Use only the static fallback below 768px (keeps mobile scrolling smooth). */
   desktopOnly?: boolean;
   slotId: string;
+  /** Wrapper classes; defaults to the bleeding, edge-masked `section-bg`. */
+  className?: string;
 }
 
-export function WebGLBackground({ kind, staticClassName, staticContent, desktopOnly = false, slotId }: Props) {
+export function WebGLBackground({ kind, staticClassName, staticContent, desktopOnly = false, slotId, className = 'section-bg' }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const reduce = useReducedMotion();
   const desktop = useIsDesktop();
@@ -45,7 +47,7 @@ export function WebGLBackground({ kind, staticClassName, staticContent, desktopO
   const dpr = desktop ? 1.25 : 0.75;
 
   return (
-    <div ref={ref} data-bg="" data-gl-slot={slotId} data-gl-state={slot} aria-hidden="true" className="section-bg">
+    <div ref={ref} data-bg="" data-gl-slot={slotId} data-gl-state={slot} aria-hidden="true" className={className}>
       <div
         className={cn('absolute inset-0', staticClassName)}
         data-animate={!reduce && !enabled ? '' : undefined}
