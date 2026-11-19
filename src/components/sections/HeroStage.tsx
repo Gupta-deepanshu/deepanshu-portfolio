@@ -29,13 +29,13 @@ export function HeroStage({ children }: { children: ReactNode }) {
       const mm = gsap.matchMedia();
       mm.add(MEDIA.motion, () => {
         // Hand-off: the room dissolves over the end of About into the ambient page
-        // background (same violet glow + grid). It overlaps the outline D tracing itself
-        // in the glass D's exact spot and size (OutlineStage: 'top 65%') only briefly, so
-        // it reads as one D changing material, never as two Ds.
+        // background (same violet glow + grid). It is fully gone just before the outline
+        // D starts tracing itself in the glass D's exact spot (OutlineStage: 'top 78%'):
+        // strictly one after the other, never two Ds at once.
         gsap.fromTo(
           root.querySelector('[data-stage-bg]'),
           { opacity: 1 },
-          { opacity: 0, ease: 'none', scrollTrigger: { trigger: root.querySelector('#about'), start: 'bottom 92%', end: 'bottom 55%', scrub: true } },
+          { opacity: 0, ease: 'none', scrollTrigger: { trigger: root.querySelector('#about'), start: 'bottom bottom', end: 'bottom 80%', scrub: true } },
         );
         gsap.to(root.querySelectorAll('.static-d svg'), {
           opacity: 0.1,

@@ -65,12 +65,25 @@ export function OutlineStage({ children }: { children: ReactNode }) {
 
         gsap.set(d, { x: aboutX, y: aboutY, scale: aboutScale, opacity: 0 });
 
-        // 1a. Trace in place, after the glass D has dissolved (HeroStage fades the room
-        //     over the stretch before this).
+        // 1a. Entrance, in place, after the glass D has dissolved (HeroStage fades the room
+        //     over the stretch just before this, so they never overlap). Scrubbed: the
+        //     front face traces itself, the depth edges follow, then the back face, so the
+        //     thickness builds after the shape; meanwhile it fades in and settles from 92%
+        //     to full size.
+        //     Dash values are on a 0–100 path length with autoRound off: GSAP rounds px
+        //     by default, which on a 0–1 scale made the whole D pop in at once.
+        const inner = d.querySelector('[data-outline-inner]');
+        const draw = (sel: string) => d.querySelectorAll(sel);
         gsap
-          .timeline({ scrollTrigger: { trigger: root, start: 'top 65%', end: 'top 15%', scrub: true, invalidateOnRefresh: true } })
-          .to(d, { opacity: 1, duration: 0.15, ease: 'none' }, 0)
-          .fromTo(d.querySelectorAll('path, line'), { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 1, ease: 'none' }, 0);
+          .timeline({
+            defaults: { ease: 'none', autoRound: false },
+            scrollTrigger: { trigger: root, start: 'top 78%', end: 'top 10%', scrub: true, invalidateOnRefresh: true },
+          })
+          .to(d, { opacity: 1, duration: 0.25 }, 0)
+          .fromTo(inner, { scale: 0.92, transformOrigin: '50% 50%' }, { scale: 1, duration: 1, ease: 'power2.out' }, 0)
+          .fromTo(draw('[data-face="front"]'), { strokeDashoffset: 100 }, { strokeDashoffset: 0, duration: 0.6, ease: 'power1.inOut' }, 0)
+          .fromTo(draw('[data-edge]'), { strokeDashoffset: 100 }, { strokeDashoffset: 0, duration: 0.2, stagger: 0.03 }, 0.45)
+          .fromTo(draw('[data-face="back"]'), { strokeDashoffset: 100 }, { strokeDashoffset: 0, duration: 0.5, ease: 'power1.inOut' }, 0.55);
 
         // 1b. Glide to a large centred outline behind Experience.
         gsap.fromTo(
@@ -136,11 +149,11 @@ export function OutlineStage({ children }: { children: ReactNode }) {
           viewBox="-1.05 -1.25 2.3 2.5"
           className="absolute inset-0 m-auto h-[72vh] w-[calc(72vh*0.92)] overflow-visible"
         >
-          <g fill="none" stroke="var(--accent)" strokeWidth="0.0055" strokeDasharray="1" strokeLinecap="round">
-            <path d={D_PATH} pathLength={1} strokeOpacity={0.8} />
-            <path d={D_PATH} pathLength={1} strokeOpacity={0.35} transform={`translate(${DEPTH.x} ${DEPTH.y})`} />
+          <g data-outline-inner="" fill="none" stroke="var(--accent)" strokeWidth="0.0055" strokeDasharray="100" strokeLinecap="round">
+            <path data-face="front" d={D_PATH} pathLength={100} strokeDashoffset={100} strokeOpacity={0.8} />
+            <path data-face="back" d={D_PATH} pathLength={100} strokeDashoffset={100} strokeOpacity={0.35} transform={`translate(${DEPTH.x} ${DEPTH.y})`} />
             {CORNERS.map(([x, y]) => (
-              <line key={`${x},${y}`} x1={x} y1={y} x2={x + DEPTH.x} y2={y + DEPTH.y} pathLength={1} strokeOpacity={0.45} />
+              <line key={`${x},${y}`} x1={x} y1={y} x2={x + DEPTH.x} y2={y + DEPTH.y} pathLength={100} strokeDashoffset={100} strokeOpacity={0.45} data-edge="" />
             ))}
           </g>
         </svg>

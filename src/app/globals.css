@@ -464,4 +464,8 @@ html[data-intro='skip'] .hero-fade {
     bottom: auto;
     height: 100svh;
   }
+  [data-outline-d] path,
+  [data-outline-d] line {
+    stroke-dashoffset: 0;
+  }
 }
