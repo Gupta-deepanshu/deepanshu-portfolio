@@ -99,7 +99,9 @@ uniform float uVelocity; uniform float uLift; uniform float uTilt;
 varying vec2 vUv;
 void main() {
   vUv = uv;
-  vec2 local = position.xy * uSize * mix(0.84, 1.0, uFocus);
+  // While the reel moves, cards pull back a little (up to ~8%).
+  float moving = abs(uVelocity);
+  vec2 local = position.xy * uSize * mix(0.84, 1.0, uFocus) * (1.0 - moving * 0.08);
   // Card centre: on a ring around the camera, tilted about the view axis, so the
   // previous card sits up-left and the next down-right and projects travel on a
   // diagonal arc (alche's globe motion). Convert that point to longitude/latitude.
@@ -108,12 +110,21 @@ void main() {
   dir.xy = vec2(c * dir.x - s * dir.y, s * dir.x + c * dir.y);
   float lat0 = asin(clamp(dir.y, -1.0, 1.0));
   float lon0 = atan(dir.x, -dir.z);
-  // Card surface: laid out upright around that centre on the sphere (x → longitude,
-  // y → latitude), so cards stay level and curve both ways like panels inside a
-  // globe. Scroll speed bulges them toward the camera.
-  float lon = lon0 + local.x / (uRadius * cos(lat0));
-  float lat = lat0 + local.y / uRadius;
-  float r = uRadius - sin(uv.x * 3.14159) * abs(uVelocity) * 0.35;
+  // Card surface: laid out upright around that centre (x → longitude, y → latitude),
+  // so cards stay level. The camera is at the sphere's centre, so pushing vertices
+  // along their sight line would be invisible; the shape is built in angular terms.
+  vec2 n = uv * 2.0 - 1.0;
+  // Convex barrel (alche's cards bulge toward you): the centre column is tallest and
+  // the sides recede, so the top edge arches up and the bottom bows down.
+  float h = 1.0 - 0.1 * n.x * n.x;
+  float w = 1.0 - 0.06 * n.x * n.x;
+  // Scroll animation: the card swings about its vertical axis in the direction of
+  // travel (near side taller and wider, far side shorter and squeezed), then settles.
+  h *= 1.0 + n.x * uVelocity * 0.18;
+  w *= 1.0 - n.x * uVelocity * 0.12;
+  float lon = lon0 + local.x / (uRadius * cos(lat0)) * w;
+  float lat = lat0 + local.y / uRadius * h;
+  float r = uRadius;
   vec3 p = vec3(sin(lon) * cos(lat), sin(lat), -cos(lon) * cos(lat)) * r;
   p.y += uLift;
   gl_Position = projectionMatrix * viewMatrix * vec4(p, 1.0);
@@ -121,7 +132,7 @@ void main() {
 
 const CARD_FRAG = /* glsl */ `
 uniform sampler2D uTex; uniform float uTexAspect; uniform float uCardAspect; uniform float uReady;
-uniform float uFocus; uniform float uVelocity; uniform vec3 uAccent;
+uniform float uFocus; uniform float uVelocity; uniform vec3 uAccent; uniform float uOffset; uniform float uTime;
 varying vec2 vUv;
 
 float roundedBox(vec2 p, vec2 b, float r) {
@@ -135,7 +146,8 @@ void main() {
   vec2 s = k > 1.0 ? vec2(1.0, 1.0 / k) : vec2(k, 1.0);
   vec2 uv = (vUv - 0.5) * s + 0.5;
 
-  float split = 0.0005 + abs(uVelocity) * 0.018;
+  float moving = abs(uVelocity);
+  float split = 0.0006 + moving * 0.028;
   vec3 tex = vec3(
     texture2D(uTex, uv + vec2(split, 0.0)).r,
     texture2D(uTex, uv).g,
@@ -148,8 +160,14 @@ void main() {
   float d = roundedBox(p, vec2(uCardAspect, 1.0) * 0.5, 0.025);
   float fw = fwidth(d);
   float alpha = 1.0 - smoothstep(-fw, fw, d);
-  // Thin glassy rim, brightest on the focused card.
-  col += (1.0 - smoothstep(0.0, 0.012, abs(d))) * mix(0.05, 0.22, uFocus);
+  // A light band slides across each card as it passes the centre (driven by its
+  // offset from the focus, so it tracks the scroll exactly).
+  float band = exp(-pow((vUv.x + vUv.y * 0.35 - 0.67 + uOffset * 1.4) * 5.0, 2.0));
+  col += band * (0.05 + moving * 0.22) * uReady;
+  // Glass edge: a thin rim that turns iridescent and brightens while moving.
+  float rim = 1.0 - smoothstep(0.0, 0.012 + moving * 0.01, abs(d));
+  vec3 film = 0.5 + 0.5 * cos(6.2831 * (vUv.x * 0.8 + vUv.y * 0.5 + uTime * 0.1 + vec3(0.0, 0.33, 0.67)));
+  col += rim * mix(vec3(1.0), film, 0.4 + moving * 0.6) * (mix(0.05, 0.22, uFocus) + moving * 0.35);
   gl_FragColor = vec4(col, alpha);
 }`;
 
@@ -294,6 +312,8 @@ const CurvedReel = forwardRef<CurvedReelHandle, Props>(function CurvedReel(
           uSize: { value: size },
           uLift: { value: 0.32 },
           uTilt: { value: TILT },
+          uOffset: { value: 0 },
+          uTime: { value: 0 },
         },
       });
       const mesh = new Mesh(cardGeo, material);
@@ -432,6 +452,8 @@ const CurvedReel = forwardRef<CurvedReelHandle, Props>(function CurvedReel(
         u.uAngle.value = offset * step;
         u.uFocus.value = Math.max(0, 1 - Math.abs(offset));
         u.uVelocity.value = vNorm;
+        u.uOffset.value = offset;
+        u.uTime.value = time;
         if (card.readyAt) u.uReady.value = Math.min(1, (now - card.readyAt) / 600);
         card.mesh.visible = Math.abs(offset) < 2.5;
       });
