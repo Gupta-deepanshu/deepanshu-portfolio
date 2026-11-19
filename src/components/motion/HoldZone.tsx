@@ -18,7 +18,7 @@ import { gsap, ScrollTrigger, useGSAP } from '@/lib/gsap';
 
 interface Props {
   /** Identifies the hold for the scenes that time themselves to it. */
-  id: 'hero' | 'about-out';
+  id: 'hero' | 'about-out' | 'skills-in' | 'contact-in';
   className: string;
 }
 

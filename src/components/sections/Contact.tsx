@@ -3,6 +3,7 @@ import { WebGLBackground } from '@/components/backgrounds/WebGLBackground';
 import { SectionChoreography } from '@/components/motion/SectionChoreography';
 import { LinkButton } from '@/components/ui/LinkButton';
 import { CopyEmail } from './CopyEmail';
+import { ContactHeadline } from './ContactHeadline';
 
 export function Contact() {
   return (
@@ -14,13 +15,7 @@ export function Contact() {
           <p className="eyebrow" data-reveal="">
             05 / Contact
           </p>
-          <h2
-            id="contact-title"
-            data-split="heading"
-            className="mt-6 max-w-6xl font-display font-semibold uppercase text-[clamp(2.2rem,6.5vw,6rem)] leading-[0.95]"
-          >
-            Let’s build something people <em className="not-italic text-accent">enjoy</em> using.
-          </h2>
+          <ContactHeadline id="contact-title" />
           <p className="mt-8 max-w-xl text-lg text-fg/85" data-reveal="">
             I’m open to SDE 2 frontend roles at product companies. The fastest way to reach me is email.
           </p>

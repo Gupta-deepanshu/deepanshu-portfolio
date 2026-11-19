@@ -64,7 +64,7 @@ All copy lives in typed files in `src/content/` (`site.ts`, `experience.ts`, `pr
 The name is split into letters on the server and animated with CSS keyframes from first paint. A JS split would hide the name until hydration, which hurts LCP and makes recruiters wait.
 
 ### Backgrounds and the WebGL budget (`src/lib/gl-budget.ts`)
-**Hold zones** (`HoldZone.tsx`, after alche's intro/outro containers): empty stretches between Hero → About (60vh) and About → Experience (80vh) where no content moves, only the fixed background and the D, which time their hand-offs to them. On desktop, stopping in the middle of a hold eases (~1 s) on in the direction you were scrolling, so the page never rests halfway through a hand-off and never pulls you back; no snapping near the ends or inside reading sections. Phones: shorter holds, no snapping. Reduced motion: no holds.
+**Hold zones** (`HoldZone.tsx`, after alche's intro/outro containers): empty stretches between Hero → About (60vh), About → Experience (80vh), Work → Skills and Skills → Contact (70vh each) where no content moves, only the fixed background and the D, which time their hand-offs to them. On desktop, stopping in the middle of a hold eases (~1 s) on in the direction you were scrolling, so the page never rests halfway through a hand-off and never pulls you back; no snapping near the ends or inside reading sections. Phones: shorter holds, no snapping. Reduced motion: no holds.
 
 One fixed **ambient background** (`AmbientBackground.tsx`, CSS only) sits behind every section: near-black base, two soft glows and the hero room's faint grid. Each section has a mood (glow colours/positions, grid strength) and GSAP scrubs the layer's custom properties from one mood to the next as a section arrives, so the page never cuts to flat black. Section effects below fade in and out over it, and every section's content fades in as it arrives and gently out as it leaves (opacity only, so the pinned reel is unaffected; the entry fade starts only when a section reaches the viewport, so nothing off-screen is dimmed at load).
 
@@ -76,6 +76,8 @@ One fixed **ambient background** (`AmbientBackground.tsx`, CSS only) sits behind
 | Projects | The outline D moves onto the reel glass D's exact screen frame (shared maths in `three/reel-layout.ts`), rides up with the stage over its last 25vh before the pin and cross-fades into the glass D (scroll-driven alpha, facing front) — only one D is ever visible: the same glass D (shared `three/glass.ts`) floats behind the cards, refracting the room and posters (drawn to a texture first, posters re-drawn on top), turning with the reel; faint star vignette |
 | Skills | CSS dot grid lit by the cursor |
 | Contact | React Bits **Liquid Ether** (WebGL2, desktop only) |
+
+The Contact headline (`ContactHeadline.tsx`) comes in like alche.studio's mission copy: each line sits on a highlight bar (off-white; the accent word on violet) that wipes in from the left while its letters type in behind it, scrubbed with scroll. Server-rendered in its final state (no-JS, reduced motion); the <h2> has the full sentence as aria-label.
 
 - Two IntersectionObservers sort each WebGL surface into one of three states:
   - **active**: near the viewport; mounted and rendering

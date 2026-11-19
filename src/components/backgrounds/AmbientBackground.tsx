@@ -43,13 +43,15 @@ export function AmbientBackground() {
         MOODS.slice(1).forEach(({ id, mood }, i) => {
           const section = document.getElementById(id);
           if (!section) return;
-          // Blend over the section's arrival: from when its top enters to when it is
-          // two-thirds of the way up the screen.
+          // Blend over the section's arrival: from when its top (or the empty hold before
+          // it, if any) enters to when the section is two-thirds of the way up the screen.
+          // So during a hold the only thing changing on screen is the light.
+          const hold = document.querySelector(`[data-hold="${id}-in"]`);
           gsap.fromTo(el, MOODS[i].mood, {
             ...mood,
             ease: 'none',
             immediateRender: false,
-            scrollTrigger: { trigger: section, start: 'top bottom', end: 'top 35%', scrub: true },
+            scrollTrigger: { trigger: hold ?? section, start: 'top bottom', endTrigger: section, end: 'top 35%', scrub: true },
           });
         });
       });
