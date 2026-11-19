@@ -258,19 +258,16 @@ html[data-intro='skip'] .hero-fade {
   --my: 40%;
 }
 
-/* Experience: contour lines drifting sideways (transform only). */
-.contours {
-  animation: contour-drift 40s ease-in-out infinite alternate;
-}
-@keyframes contour-drift {
-  to {
-    transform: translate3d(-120px, 30px, 0);
-  }
+/* Experience: alche-style "+" crosshair grid on the black panel (static). */
+.bg-crosses {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cpath d='M90 83v14M83 90h14' stroke='%23edeae4' stroke-opacity='.2'/%3E%3C/svg%3E");
+  background-position: center;
 }
 
 /* Projects: deep vignette with two slowly drifting star layers. */
 .bg-stars {
-  background: radial-gradient(ellipse at 50% 55%, #130f22 0%, var(--bg) 70%);
+  /* Translucent: the outline D (OutlineStage) must show through. */
+  background: radial-gradient(ellipse at 50% 55%, rgb(19 15 34 / 0.55) 0%, transparent 70%);
 }
 .bg-stars::before,
 .bg-stars::after {

@@ -69,11 +69,13 @@ void main() {
   float minor = gridLines(g * 5.0, 0.0);
   vec2 q = (vUv - vec2(0.5, 0.5 + uLift)) * vec2(aspect, 1.0);
   float glow = exp(-dot(q, q) * 2.6);
-  vec3 col = vec3(0.010, 0.009, 0.020) + uGlowColor * glow * 0.16;
+  // Light only, no base colour: the canvas is transparent, so the page behind (the
+  // black panel with the outline D) shows through. Premultiplied alpha.
+  vec3 col = uGlowColor * glow * 0.16;
   col += (major * 0.3 + minor * 0.045) * (vec3(0.055, 0.05, 0.09) + uGlowColor * glow * 0.5);
   vec2 v = vUv - 0.5;
   col *= 1.0 - dot(v, v) * 1.1;
-  gl_FragColor = vec4(col, 1.0);
+  gl_FragColor = vec4(col, clamp(max(col.r, max(col.g, col.b)) * 1.5, 0.0, 1.0));
 }`;
 
 const CARD_VERT = /* glsl */ `
@@ -162,7 +164,8 @@ const CurvedReel = forwardRef<CurvedReelHandle, Props>(function CurvedReel(
 
     let renderer: WebGLRenderer;
     try {
-      renderer = new WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: 'high-performance' });
+      renderer = new WebGLRenderer({ canvas, antialias: true, alpha: true, premultipliedAlpha: true, powerPreference: 'high-performance' });
+      renderer.setClearColor(0x000000, 0);
     } catch {
       canvas.remove();
       live.current.onError?.();

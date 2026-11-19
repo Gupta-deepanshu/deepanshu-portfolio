@@ -4,25 +4,15 @@ import { SectionChoreography } from '@/components/motion/SectionChoreography';
 
 /**
  * Experience timeline. The spine is a 1px element scaled 0→1 with scroll (transform
- * only, so it stays on the compositor). The background is slow SVG contour lines
- * that drift by transform, which is cheaper than animating SVG path geometry.
+ * only, so it stays on the compositor). The section rides on OutlineStage's black
+ * panel, with a faint crosshair grid as its own texture.
  */
 export function Experience() {
   return (
     <SectionChoreography id="experience" labelledBy="experience-title" className="relative isolate py-32 sm:py-44">
-      <CssBackground>
-        <svg className="absolute inset-0 h-full w-full opacity-[0.22]" preserveAspectRatio="none" viewBox="0 0 1200 800">
-          <g fill="none" stroke="#edeae4" strokeWidth="0.6" className="contours">
-            {Array.from({ length: 14 }, (_, i) => (
-              <path
-                key={i}
-                d={`M-200 ${120 + i * 42} C 200 ${40 + i * 40}, 500 ${260 + i * 34}, 800 ${140 + i * 44} S 1300 ${200 + i * 38}, 1500 ${120 + i * 46}`}
-                opacity={0.35 + (i % 4) * 0.15}
-              />
-            ))}
-          </g>
-        </svg>
-      </CssBackground>
+      {/* alche-style panel texture: a faint "+" crosshair grid. The black panel itself and
+          the outline D come from OutlineStage. */}
+      <CssBackground className="bg-crosses" />
 
       <div className="container-x">
         <div className="mb-20 grid gap-6 lg:grid-cols-12">

@@ -7,8 +7,8 @@
  *
  * The WebGL scene (GlassD) reads the scroll position itself: as the hero leaves,
  * the D shrinks into About's empty left column, the camera turns along the wall
- * and the glow cools. This wrapper only handles the hand-off: the whole stage
- * fades out as About ends, so Experience can bring its own background.
+ * and the glow cools. The layer stays fixed one viewport past About, so the black
+ * Experience panel (OutlineStage) slides up over the still room.
  *
  * Phones / no WebGL: the same sticky layer shows the static gradient; the static D
  * fades back as the hero leaves so it never sits behind About's text.
@@ -27,11 +27,6 @@ export function HeroStage({ children }: { children: ReactNode }) {
       if (!root) return;
       const mm = gsap.matchMedia();
       mm.add(MEDIA.motion, () => {
-        gsap.fromTo(
-          root.querySelector('[data-stage-bg]'),
-          { opacity: 1 },
-          { opacity: 0, ease: 'none', scrollTrigger: { trigger: root.querySelector('#about'), start: 'bottom 85%', end: 'bottom 20%', scrub: true } },
-        );
         gsap.to(root.querySelectorAll('.static-d svg'), {
           opacity: 0.1,
           ease: 'none',
@@ -45,13 +40,9 @@ export function HeroStage({ children }: { children: ReactNode }) {
 
   return (
     <div ref={ref} className="relative isolate">
-      {/* Mask: the last 45vh of the stage fade to transparent, so the fixed layer never
-          shows a hard bottom edge as it hands over to Experience. */}
-      <div
-        data-stage-bg=""
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 -z-10 [mask-image:linear-gradient(to_bottom,#000_calc(100%-45vh),transparent)]"
-      >
+      {/* The layer runs one viewport past About, so the room is still fixed while the
+          black Experience panel (OutlineStage, later in the DOM, so on top) slides over it. */}
+      <div data-stage-bg="" aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 -bottom-[100svh] -z-10">
         <div data-stage-sticky="" className="sticky top-0 h-svh">
           <WebGLBackground
             kind="glass"

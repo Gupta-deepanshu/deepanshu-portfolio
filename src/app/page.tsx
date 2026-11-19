@@ -1,6 +1,8 @@
 import { Hero } from '@/components/sections/Hero';
 import { About } from '@/components/sections/About';
 import { HeroStage } from '@/components/sections/HeroStage';
+import { OutlineStage } from '@/components/sections/OutlineStage';
+import { ScrollRail } from '@/components/layout/ScrollRail';
 import { Experience } from '@/components/sections/Experience';
 import { Projects } from '@/components/sections/Projects';
 import { Skills } from '@/components/sections/Skills';
@@ -15,12 +17,15 @@ export default function Home() {
           <Hero />
           <About />
         </HeroStage>
-        <Experience />
-        <Projects />
+        <OutlineStage>
+          <Experience />
+          <Projects />
+        </OutlineStage>
         <Skills />
         <Contact />
       </main>
       <Footer />
+      <ScrollRail />
     </>
   );
 }
