@@ -56,7 +56,7 @@ All copy lives in typed files in `src/content/` (`site.ts`, `experience.ts`, `pr
   - Sections are server components; `SectionChoreography` attaches motion to `data-*` attributes (`data-reveal`, `data-split`, `data-scrub-lines`, `data-bg`, `data-draw`).
   - Everything runs inside `gsap.matchMedia()`, so with reduced motion nothing is created.
   - `useGSAP` reverts everything on unmount.
-- **Motion** handles state animation: the page-transition curtain, the list/carousel switch, the toggle, the carousel caption, the cursor ring, and the Kokonut toast.
+- **Motion** handles state animation: the page-transition curtain, the list/carousel switch, the toggle, the carousel caption, and the Kokonut toast.
 - **No element is animated by both libraries.**
 - **Lenis** uses the setup it recommends for ScrollTrigger: `lenis.on('scroll', ScrollTrigger.update)`, driven by `gsap.ticker`, with `lagSmoothing(0)`. It moves the real scroll position, so the scrollbar, keyboard, anchors and screen readers keep working. Anchor clicks also move focus.
 

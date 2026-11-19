@@ -4,7 +4,6 @@ import { site } from '@/content/site';
 import { SmoothScroll } from '@/components/providers/SmoothScroll';
 import { PageTransitionProvider } from '@/components/providers/PageTransition';
 import { Header } from '@/components/layout/Header';
-import { Cursor } from '@/components/ui/Cursor';
 import { personJsonLd } from '@/lib/seo';
 import './globals.css';
 
@@ -74,7 +73,6 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
           <Header />
           {children}
         </PageTransitionProvider>
-        <Cursor />
         <div className="grain" aria-hidden="true" />
       </body>
     </html>
