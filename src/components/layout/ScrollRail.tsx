@@ -36,10 +36,13 @@ export function ScrollRail() {
       const triggers = SECTIONS.map(({ id }, i) => {
         const el = document.getElementById(id);
         if (!el) return null;
+        const last = i === SECTIONS.length - 1;
         return ScrollTrigger.create({
           trigger: el,
           start: 'top center',
-          end: 'bottom center',
+          // The last section can never scroll its bottom up to the centre (the page ends
+          // first), so it fills to the very end of the page instead: fully lit = the end.
+          end: last ? 'max' : 'bottom center',
           onToggle: (self) => self.isActive && setActive(i),
           onUpdate: (self) => {
             const fill = fills.current[i];

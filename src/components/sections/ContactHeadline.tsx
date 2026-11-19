@@ -37,10 +37,10 @@ export function ContactHeadline({ id }: { id: string }) {
       mm.add(MEDIA.motion, () => {
         const tl = gsap.timeline({
           defaults: { ease: 'none' },
-          // Spread over most of the headline's travel up the screen (it can reach about the
-          // top edge before the page ends, since Contact is the last section), with a
-          // softer scrub so the wipe trails the scroll a little.
-          scrollTrigger: { trigger: h, start: 'top 95%', end: 'top 18%', scrub: 1.2 },
+          // From the moment the headline enters until it reaches the centre of the screen:
+          // done by the time you are looking straight at it (no last word still animating
+          // mid-read), and still ~1.5x the original scroll distance. Light scrub smoothing.
+          scrollTrigger: { trigger: h, start: 'top bottom', end: 'center 55%', scrub: 0.8 },
         });
         h.querySelectorAll<HTMLElement>('[data-seg]').forEach((seg, i) => {
           const at = i * 0.45;
