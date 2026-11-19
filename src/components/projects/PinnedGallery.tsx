@@ -16,12 +16,13 @@
  */
 import dynamic from 'next/dynamic';
 import { AnimatePresence, motion } from 'motion/react';
-import { useCallback, useRef, useState, type KeyboardEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { projects } from '@/content/projects';
 import { mediaFor } from '@/lib/media';
 import { gsap, ScrollTrigger, useGSAP } from '@/lib/gsap';
 import { useWebGLSlot } from '@/lib/gl-budget';
 import { scrollToY } from '@/lib/scroll';
+import { whenIdle } from '@/lib/idle';
 import type { CurvedReelHandle, ReelItem } from '@/components/three/CurvedReel';
 import DecryptedText from '@/components/reactbits/DecryptedText';
 import { LinkButton, Arrow } from '@/components/ui/LinkButton';
@@ -44,7 +45,13 @@ export function PinnedGallery({ onFail }: { onFail: () => void }) {
   const progressRef = useRef(0);
   const glassRef = useRef(0);
   const [active, setActive] = useState(0);
-  const slot = useWebGLSlot(stageRef);
+  // Kept alive once built, and warmed at idle after load: building the reel compiles its
+  // shaders, which on D3D blocks the GPU thread ~100 ms. Done mid-scroll (when the budget
+  // first mounted it, halfway through Experience) that dropped a frame; done while the
+  // visitor is still on the hero, nobody sees it. Paused (no rendering) until in view.
+  const slot = useWebGLSlot(stageRef, true, true);
+  const [warm, setWarm] = useState(false);
+  useEffect(() => whenIdle(() => setWarm(true), 4000), []);
 
   useGSAP(
     () => {
@@ -128,7 +135,7 @@ export function PinnedGallery({ onFail }: { onFail: () => void }) {
     <div ref={stageRef} data-gl-slot="projects" data-gl-state={slot} className="relative h-svh overflow-hidden">
       {/* Full-bleed canvas; the top edge dissolves into the section heading above. */}
       <div className="absolute inset-0 [mask-image:linear-gradient(to_bottom,transparent,#000_14%)]">
-        {slot !== 'released' && (
+        {(slot !== 'released' || warm) && (
           <CurvedReel ref={attachGallery} items={items} activeIndex={active} paused={slot !== 'active'} dpr={1.5} onError={onFail} />
         )}
         {/* Scrim under the overlay text (contrast never depends on the poster). */}

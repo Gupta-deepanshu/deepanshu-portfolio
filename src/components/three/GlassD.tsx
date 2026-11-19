@@ -49,6 +49,7 @@ import {
   WebGLRenderTarget,
   type IUniform,
 } from 'three';
+import { whenIdle } from '@/lib/idle';
 import { QUAD_VERT, ROOM_CHUNK } from './room';
 import { createD, GLASS_FRAG, GLASS_VERT } from './glass';
 
@@ -592,9 +593,13 @@ export default function GlassD({ paused = false, dpr = 1.25, interactive = true,
       textTexture.dispose();
       quadGeo.dispose();
       glassGeo.dispose();
-      renderer.dispose();
-      renderer.forceContextLoss();
+      // Take the canvas off the page now; free the context when idle (synchronous GPU
+      // flush, ~80 ms: doing it here dropped a frame while scrolling past).
       canvas.remove();
+      whenIdle(() => {
+        renderer.dispose();
+        renderer.forceContextLoss();
+      });
     };
   }, [dpr, interactive, textSelector]);
 

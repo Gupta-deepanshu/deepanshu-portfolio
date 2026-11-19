@@ -42,7 +42,9 @@ export function WebGLBackground({ kind, staticClassName, staticContent, desktopO
   const webgl = useWebGL2();
   const enabled = webgl && !reduce && (!desktopOnly || desktop);
   const hydrated = useSyncExternalStore(noop, () => true, () => false);
-  const slot = useWebGLSlot(ref, enabled);
+  // The hero scene is kept alive once built (paused off-screen): rebuilding it on the
+  // way back up recompiles its shaders and stalls the GPU mid-scroll.
+  const slot = useWebGLSlot(ref, enabled, kind === 'glass');
   const paused = slot !== 'active';
   const dpr = desktop ? 1.25 : 0.75;
 

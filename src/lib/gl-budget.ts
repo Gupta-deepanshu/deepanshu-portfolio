@@ -26,6 +26,9 @@ interface Slot {
   el: Element;
   near: boolean;
   mounted: boolean;
+  /** Once mounted, never released again (paused instead): see `keepAlive`. */
+  keep: boolean;
+  wasMounted: boolean;
   set: (state: SlotState) => void;
   current: SlotState;
 }
@@ -44,7 +47,12 @@ function recompute() {
   const near = [...slots].filter((s) => s.near).sort((a, b) => distance(a) - distance(b));
   const active = new Set(near.slice(0, MAX_ACTIVE));
   slots.forEach((slot) => {
-    const next: SlotState = active.has(slot) ? 'active' : slot.mounted || slot.near ? 'paused' : 'released';
+    const next: SlotState = active.has(slot)
+      ? 'active'
+      : slot.mounted || slot.near || (slot.keep && slot.wasMounted)
+        ? 'paused'
+        : 'released';
+    if (next !== 'released') slot.wasMounted = true;
     if (next !== slot.current) {
       slot.current = next;
       slot.set(next);
@@ -84,15 +92,18 @@ function observers() {
 /**
  * Register an element (the section/stage that hosts a canvas) with the budget.
  * Pass `enabled=false` on devices/preferences that use the CSS fallback instead.
+ * `keepAlive`: once mounted it is paused (context kept, no rendering) instead of
+ * released when far away. For scenes whose shader compile stalls the GPU thread
+ * (~100 ms on D3D) — tearing them down and rebuilding mid-scroll dropped frames.
  */
-export function useWebGLSlot(ref: RefObject<Element | null>, enabled = true): SlotState {
+export function useWebGLSlot(ref: RefObject<Element | null>, enabled = true, keepAlive = false): SlotState {
   const [state, setState] = useState<SlotState>('released');
 
   useEffect(() => {
     const el = ref.current;
     if (!el || !enabled) return;
     observers();
-    const slot: Slot = { el, near: false, mounted: false, set: setState, current: 'released' };
+    const slot: Slot = { el, near: false, mounted: false, keep: keepAlive, wasMounted: false, set: setState, current: 'released' };
     slots.add(slot);
     nearObserver!.observe(el);
     mountObserver!.observe(el);
@@ -103,7 +114,7 @@ export function useWebGLSlot(ref: RefObject<Element | null>, enabled = true): Sl
       setState('released');
       recompute();
     };
-  }, [ref, enabled]);
+  }, [ref, enabled, keepAlive]);
 
   return enabled ? state : 'released';
 }

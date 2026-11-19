@@ -38,6 +38,7 @@ import {
   WebGLRenderer,
   WebGLRenderTarget,
 } from 'three';
+import { whenIdle } from '@/lib/idle';
 import { QUAD_VERT, ROOM_CHUNK } from './room';
 import { createD, GLASS_FRAG, GLASS_VERT } from './glass';
 import { CARD_LIFT, cardSize, FOV, glassPlacement, RADIUS, TILT } from './reel-layout';
@@ -327,6 +328,9 @@ const CurvedReel = forwardRef<CurvedReelHandle, Props>(function CurvedReel(
         tex.anisotropy = maxAniso;
         tex.minFilter = LinearFilter;
         tex.generateMipmaps = false;
+        // Upload now, in this load callback (one texture per task), instead of all six
+        // inside the first rendered frame.
+        renderer.initTexture(tex);
         card.poster = tex;
         material.uniforms.uTex.value = tex;
         material.uniforms.uTexAspect.value = tex.image.width / Math.max(1, tex.image.height);
@@ -421,7 +425,7 @@ const CurvedReel = forwardRef<CurvedReelHandle, Props>(function CurvedReel(
 
     const frame = (now: number) => {
       raf = 0;
-      if (live.current.paused) return;
+      if (live.current.paused && warmFrames <= 0) return;
       const dt = Math.min((now - prev) / 1000, 1 / 30);
       prev = now;
       time += dt;
@@ -463,6 +467,8 @@ const CurvedReel = forwardRef<CurvedReelHandle, Props>(function CurvedReel(
       // the D faces front, so it lines up with the flat outline it replaces; once in, it
       // turns with the projects, drifts, leans with the cursor and tips with scroll speed.
       glassAlpha += (glassTarget.current - glassAlpha) * (1 - Math.exp(-dt * 12));
+      // Warm-up frames draw the glass fully so its first real draw happens now, hidden.
+      if (warmFrames > 0) glassAlpha = 1;
       const free = glassAlpha * glassAlpha;
       glassEuler.set(
         (Math.sin(time * 0.3) * 0.15 + look.y * 0.25) * free + vNorm * 0.35,
@@ -492,11 +498,44 @@ const CurvedReel = forwardRef<CurvedReelHandle, Props>(function CurvedReel(
         first = false;
         canvas.dataset.ready = '';
       }
+      if (warmFrames > 0 && --warmFrames === 0) {
+        // Warm-up done: don't let the forced alpha linger into the real hand-off.
+        glassAlpha = glassTarget.current;
+      }
       raf = requestAnimationFrame(frame);
     };
 
+    // Compile every shader program off the main thread before the first frame
+    // (KHR_parallel_shader_compile via compileAsync). Compiling on first render froze the
+    // page ~300 ms mid-Experience, when the budget mounts the reel. Room and cards are
+    // drawn both into bgTarget and to the screen, which are different program variants
+    // (output colour space), so both are warmed.
+    let compiled = false;
+    let warmFrames = 0;
+    let disposed = false;
+    renderer.setRenderTarget(bgTarget);
+    const warm = [renderer.compileAsync(roomScene, quadCam), renderer.compileAsync(scene, camera)];
+    renderer.setRenderTarget(null);
+    warm.push(
+      renderer.compileAsync(roomScene, quadCam),
+      renderer.compileAsync(scene, camera),
+      renderer.compileAsync(copyScene, quadCam),
+      renderer.compileAsync(glassScene, camera),
+    );
+    Promise.all(warm)
+      .catch(() => undefined)
+      .then(() => {
+        if (disposed) return;
+        compiled = true;
+        // D3D (ANGLE) still finishes some shader work lazily on the first real draw, which
+        // would stall the GPU thread the first time the reel shows mid-scroll. So draw a
+        // few complete frames now, even while paused (the canvas is off-screen / faded).
+        warmFrames = 3;
+        start();
+      });
+
     const start = () => {
-      if (raf || live.current.paused) return;
+      if (raf || !compiled || (live.current.paused && warmFrames <= 0)) return;
       prev = performance.now();
       raf = requestAnimationFrame(frame);
     };
@@ -505,6 +544,7 @@ const CurvedReel = forwardRef<CurvedReelHandle, Props>(function CurvedReel(
     start();
 
     return () => {
+      disposed = true;
       state.start = null;
       state.syncVideo = null;
       cancelAnimationFrame(raf);
@@ -523,9 +563,13 @@ const CurvedReel = forwardRef<CurvedReelHandle, Props>(function CurvedReel(
       noFluid.dispose();
       quadGeo.dispose();
       roomMat.dispose();
-      renderer.dispose();
-      renderer.forceContextLoss();
+      // Take the canvas off the page now; free the context when idle (synchronous GPU
+      // flush, ~80 ms: doing it here dropped a frame while scrolling past).
       canvas.remove();
+      whenIdle(() => {
+        renderer.dispose();
+        renderer.forceContextLoss();
+      });
     };
   }, [items, dpr]);
 

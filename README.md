@@ -84,6 +84,7 @@ The Contact headline (`ContactHeadline.tsx`) comes in like alche.studio's missio
   - **paused**: within ~2 viewports; context kept, render loop stopped
   - **released**: further away; unmounted, context freed
 - At most 2 surfaces render at once.
+- The hero scene and the projects reel are **kept alive** once built (paused off-screen instead of released) and the reel is **warmed at idle after load**: its shaders compile with `compileAsync` and it draws a few hidden frames, because on Windows/D3D shader compilation and the first draws block the GPU thread (~100–300 ms) and used to drop frames halfway through Experience. Context teardown (`dispose` + `forceContextLoss`) runs at idle for the same reason.
 - I chose separate canvases over one shared scissor canvas because the three pipelines (hero glass + fluid, reel, Liquid Ether) would have to be merged into one renderer, and the budget already gives the same practical cost.
 - Every WebGL background sits on a static CSS gradient. That gradient is what shows with reduced motion, without WebGL2, and for Contact on phones.
 
