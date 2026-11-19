@@ -453,9 +453,6 @@ html[data-intro='skip'] .hero-fade {
 .hold-about {
   height: 40svh;
 }
-.hold-section {
-  height: 30svh;
-}
 @media (min-width: 768px) {
   .hold-hero {
     height: 60svh;
@@ -463,14 +460,10 @@ html[data-intro='skip'] .hero-fade {
   .hold-about {
     height: 80svh;
   }
-  .hold-section {
-    height: 70svh;
-  }
 }
 @media (prefers-reduced-motion: reduce) {
   .hold-hero,
-  .hold-about,
-  .hold-section {
+  .hold-about {
     height: 0;
   }
 }

@@ -60,6 +60,18 @@ export function SkillDeck() {
         setDeck(true);
         cards.forEach((c, i) => gsap.set(c, slotPose(slotOf(i, 0))));
 
+        // Entrance (Card Swap's intro): as the section scrolls into view, the cards fly up
+        // from below one after another, back of the deck first, and settle into the stack,
+        // so the deck is built by the time the section pins. Scrubbed with scroll.
+        const intro = gsap.timeline({
+          scrollTrigger: { trigger: stage, start: 'top 90%', end: 'top top', scrub: 0.6 },
+        });
+        [...cards].reverse().forEach((c, j) => {
+          const s = slotOf(cards.indexOf(c), 0);
+          if (s >= VISIBLE) return;
+          intro.from(c, { y: '+=' + window.innerHeight * 0.7, rotate: 6 - j * 2, opacity: 0, duration: 0.6, ease: 'power3.out', immediateRender: true }, j * 0.25);
+        });
+
         const tl = gsap.timeline({ paused: true, defaults: { ease: 'power2.inOut' } });
         for (let k = 0; k < LAST; k++) {
           cards.forEach((c, i) => {
@@ -97,6 +109,8 @@ export function SkillDeck() {
         return () => {
           triggerRef.current?.kill();
           triggerRef.current = null;
+          intro.scrollTrigger?.kill();
+          intro.kill();
           tl.kill();
           gsap.set(cards, { clearProps: 'all' });
           setDeck(false);

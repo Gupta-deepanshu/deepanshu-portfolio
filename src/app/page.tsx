@@ -26,9 +26,7 @@ export default function Home() {
           <Experience />
           <Projects />
         </OutlineStage>
-        <HoldZone id="skills-in" className="hold-section" />
         <Skills />
-        <HoldZone id="contact-in" className="hold-section" />
         <Contact />
       </main>
       <Footer />
