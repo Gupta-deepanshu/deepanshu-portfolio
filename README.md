@@ -90,7 +90,7 @@ One three.js renderer, three stages per frame:
 - The D spins freely with momentum: cursor movement and scroll add angular velocity (quaternion integration with friction), so a flick tumbles it a full 360°; after ~2.5 s without input it eases back to face forward. It is sized like alche's A (~62% of the viewport height) over a one-line name (~86% of the width); the fluid barely moves the name itself so it stays readable. Desktop only. Phones, reduced motion and no-WebGL2 get `StaticD` (SVG, same outline).
 
 ### Projects reel (`src/components/three/CurvedReel.tsx`)
-The camera stands inside the same grid room; posters hang on the wall. The active project fills ~55% of the width and its neighbours peek in, bent around the curve.
+The camera stands inside a spherical grid room; posters sit on a ring tilted ~11.5° around the view axis, so the previous project waits up-left and the next down-right and each one arrives on a diagonal arc (alche's globe-like works carousel). Cards stay upright and level and curve both ways (longitude/latitude on the sphere). The active project fills ~55% of the width.
 - Rotation comes from a pinned, scrubbed, snapping ScrollTrigger (one viewport of scroll per project). The reel eases toward it; scroll speed bulges the cards and splits their RGB channels.
 - The glow behind the reel blends the site violet with the active project's accent.
 - The canvas draws only posters and videos. Title, links, tech, the "Earlier work" label and the 1/6 counter are HTML.

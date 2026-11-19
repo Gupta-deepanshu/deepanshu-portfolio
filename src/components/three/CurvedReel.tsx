@@ -64,13 +64,18 @@ interface Props {
 /* ---------------------------------------------------------------- shaders */
 
 const ROOM_FRAG = /* glsl */ `
-uniform vec2 uRes; uniform float uTurn; uniform float uTime; uniform vec3 uGlowColor; uniform float uLift;
+uniform vec2 uRes; uniform float uTurn; uniform float uTime; uniform vec3 uGlowColor; uniform float uLift; uniform float uTilt;
 varying vec2 vUv;
 ${ROOM_CHUNK}
 void main() {
   float aspect = uRes.x / uRes.y;
   vec2 p = (vUv - 0.5) * vec2(aspect, 1.0) * 1.1;
-  vec2 g = cylinderWall(p) * vec2(6.5, 6.5) + vec2(uTurn, uTime * 0.01);
+  // Into the ring's tilted frame, then onto a sphere around the camera (longitude,
+  // latitude), so the grid curves both ways and turns with the cards.
+  float c = cos(uTilt), s = sin(uTilt);
+  p = vec2(c * p.x + s * p.y, -s * p.x + c * p.y);
+  vec2 sphere = vec2(atan(p.x), atan(p.y / sqrt(1.0 + p.x * p.x)));
+  vec2 g = sphere * vec2(6.5, 6.5) + vec2(uTurn, uTime * 0.01);
   float major = gridLines(g, 0.25);
   float minor = gridLines(g * 5.0, 0.0);
   vec2 q = (vUv - vec2(0.5, 0.5 + uLift)) * vec2(aspect, 1.0);
@@ -90,15 +95,27 @@ void main() { gl_FragColor = texture2D(uTex, vUv); }`;
 
 const CARD_VERT = /* glsl */ `
 uniform float uAngle; uniform float uRadius; uniform vec2 uSize; uniform float uFocus;
-uniform float uVelocity; uniform float uLift;
+uniform float uVelocity; uniform float uLift; uniform float uTilt;
 varying vec2 vUv;
 void main() {
   vUv = uv;
   vec2 local = position.xy * uSize * mix(0.84, 1.0, uFocus);
-  // Wrap the plane onto the cylinder wall; scroll speed bulges it toward the camera.
-  float a = uAngle + local.x / uRadius;
+  // Card centre: on a ring around the camera, tilted about the view axis, so the
+  // previous card sits up-left and the next down-right and projects travel on a
+  // diagonal arc (alche's globe motion). Convert that point to longitude/latitude.
+  vec3 dir = vec3(sin(uAngle), 0.0, -cos(uAngle));
+  float c = cos(uTilt), s = sin(uTilt);
+  dir.xy = vec2(c * dir.x - s * dir.y, s * dir.x + c * dir.y);
+  float lat0 = asin(clamp(dir.y, -1.0, 1.0));
+  float lon0 = atan(dir.x, -dir.z);
+  // Card surface: laid out upright around that centre on the sphere (x → longitude,
+  // y → latitude), so cards stay level and curve both ways like panels inside a
+  // globe. Scroll speed bulges them toward the camera.
+  float lon = lon0 + local.x / (uRadius * cos(lat0));
+  float lat = lat0 + local.y / uRadius;
   float r = uRadius - sin(uv.x * 3.14159) * abs(uVelocity) * 0.35;
-  vec3 p = vec3(sin(a) * r, local.y + uLift, -cos(a) * r);
+  vec3 p = vec3(sin(lon) * cos(lat), sin(lat), -cos(lon) * cos(lat)) * r;
+  p.y += uLift;
   gl_Position = projectionMatrix * viewMatrix * vec4(p, 1.0);
 }`;
 
@@ -140,6 +157,8 @@ void main() {
 
 const RADIUS = 5;
 const FOV = 38;
+/** Ring tilt around the view axis (rad), ~11.5°; negative = next card lower right. */
+const TILT = -0.2;
 
 const CurvedReel = forwardRef<CurvedReelHandle, Props>(function CurvedReel(
   { items, activeIndex, paused = false, dpr = 1.5, onError },
@@ -199,6 +218,7 @@ const CurvedReel = forwardRef<CurvedReelHandle, Props>(function CurvedReel(
         uTime: { value: 0 },
         uGlowColor: { value: glowColor },
         uLift: { value: 0.06 },
+        uTilt: { value: TILT },
       },
     });
     const quadGeo = new PlaneGeometry(2, 2);
@@ -248,7 +268,7 @@ const CurvedReel = forwardRef<CurvedReelHandle, Props>(function CurvedReel(
     /* cards */
     const scene = new Scene();
     const camera = new PerspectiveCamera(FOV, 1, 0.1, 50);
-    const cardGeo = new PlaneGeometry(1, 1, 48, 1);
+    const cardGeo = new PlaneGeometry(1, 1, 48, 16);
     const size = new Vector2(3, 1.9);
     const loader = new TextureLoader();
     let step = 0.74;
@@ -273,6 +293,7 @@ const CurvedReel = forwardRef<CurvedReelHandle, Props>(function CurvedReel(
           uRadius: { value: RADIUS },
           uSize: { value: size },
           uLift: { value: 0.32 },
+          uTilt: { value: TILT },
         },
       });
       const mesh = new Mesh(cardGeo, material);
