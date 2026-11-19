@@ -1,8 +1,9 @@
 'use client';
 
 /**
- * Desktop projects carousel: the section pins, and scroll progress (ScrollTrigger,
- * scrubbed, snapping to each project) rotates the WebGL Circular Gallery.
+ * Desktop projects reel: the section pins, and scroll progress (ScrollTrigger,
+ * scrubbed, snapping to each project) turns the WebGL CurvedReel: a curved room
+ * with the active project large in the centre and its neighbours at the edges.
  *
  * - Scroll position is the single source of truth. Arrow keys and Prev/Next buttons
  *   don't rotate the gallery directly; they scroll the page to that project's snap
@@ -21,24 +22,24 @@ import { mediaFor } from '@/lib/media';
 import { gsap, ScrollTrigger, useGSAP } from '@/lib/gsap';
 import { useWebGLSlot } from '@/lib/gl-budget';
 import { scrollToY } from '@/lib/scroll';
-import type { CircularGalleryHandle } from '@/components/reactbits/CircularGallery';
+import type { CurvedReelHandle, ReelItem } from '@/components/three/CurvedReel';
 import DecryptedText from '@/components/reactbits/DecryptedText';
 import { LinkButton, Arrow } from '@/components/ui/LinkButton';
 import { NavButton } from '@/components/ui/NavButton';
 import { TransitionLink } from '@/components/ui/TransitionLink';
 import { EarlierLabel } from './ProjectCard';
 
-const CircularGallery = dynamic(() => import('@/components/reactbits/CircularGallery'), { ssr: false });
+const CurvedReel = dynamic(() => import('@/components/three/CurvedReel'), { ssr: false });
 
-const items = projects.map((p) => {
+const items: ReelItem[] = projects.map((p) => {
   const m = mediaFor(p);
-  return { image: m.poster, video: m.video };
+  return { image: m.poster, video: m.video, accent: p.accent };
 });
 const LAST = projects.length - 1;
 
 export function PinnedGallery({ onFail }: { onFail: () => void }) {
   const stageRef = useRef<HTMLDivElement>(null);
-  const galleryRef = useRef<CircularGalleryHandle | null>(null);
+  const galleryRef = useRef<CurvedReelHandle | null>(null);
   const triggerRef = useRef<ScrollTrigger | null>(null);
   const progressRef = useRef(0);
   const [active, setActive] = useState(0);
@@ -52,7 +53,7 @@ export function PinnedGallery({ onFail }: { onFail: () => void }) {
         trigger: stage,
         pin: true,
         start: 'top top',
-        end: () => `+=${window.innerHeight * 0.85 * LAST}`,
+        end: () => `+=${window.innerHeight * LAST}`,
         scrub: true,
         invalidateOnRefresh: true,
         snap: { snapTo: 1 / LAST, duration: { min: 0.25, max: 0.6 }, delay: 0.08, ease: 'power2.inOut' },
@@ -80,7 +81,7 @@ export function PinnedGallery({ onFail }: { onFail: () => void }) {
   );
 
   // Ref callback: when the gallery (re)mounts after being released, sync it at once.
-  const attachGallery = useCallback((handle: CircularGalleryHandle | null) => {
+  const attachGallery = useCallback((handle: CurvedReelHandle | null) => {
     galleryRef.current = handle;
     handle?.setProgress(progressRef.current);
   }, []);
@@ -107,27 +108,19 @@ export function PinnedGallery({ onFail }: { onFail: () => void }) {
 
   return (
     <div ref={stageRef} data-gl-slot="projects" data-gl-state={slot} className="relative h-svh overflow-hidden">
-      <div className="absolute inset-x-0 top-[8vh] bottom-[30vh]">
+      {/* Full-bleed canvas; the top edge dissolves into the section heading above. */}
+      <div className="absolute inset-0 [mask-image:linear-gradient(to_bottom,transparent,#000_14%)]">
         {slot !== 'released' && (
-          <CircularGallery
-            ref={attachGallery}
-            items={items}
-            activeIndex={active}
-            paused={slot !== 'active'}
-            bend={2.4}
-            itemAspect={1.6}
-            itemSize={1.05}
-            gap={0.22}
-            dpr={1.5}
-            onError={onFail}
-          />
+          <CurvedReel ref={attachGallery} items={items} activeIndex={active} paused={slot !== 'active'} dpr={1.5} onError={onFail} />
         )}
+        {/* Scrim under the overlay text (contrast never depends on the poster). */}
+        <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-[45%] bg-gradient-to-t from-bg via-bg/70 to-transparent" />
         {/* Click the centred card to open it; the visible link below is the accessible path. */}
         <TransitionLink
           href={`/projects/${project.slug}`}
           tabIndex={-1}
           aria-hidden="true"
-          className="absolute left-1/2 top-1/2 h-[60%] w-[min(60%,60vh)] -translate-x-1/2 -translate-y-1/2"
+          className="absolute left-1/2 top-[41%] h-[50%] w-[min(54%,82vh)] -translate-x-1/2 -translate-y-1/2"
         />
       </div>
 

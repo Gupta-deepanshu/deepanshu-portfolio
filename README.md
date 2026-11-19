@@ -66,10 +66,10 @@ The name is split into letters on the server and animated with CSS keyframes fro
 ### Backgrounds and the WebGL budget (`src/lib/gl-budget.ts`)
 | Section | Background |
 |---|---|
-| Hero | React Bits **Silk** (WebGL2) |
+| Hero | Glass D scene (three.js, desktop): fluid sim + curved grid room + refractive D; static SVG D elsewhere |
 | About | CSS spotlight following the cursor |
 | Experience | SVG contour lines drifting by transform |
-| Projects | CSS star vignette; the gallery itself is WebGL |
+| Projects | CSS star vignette; the reel itself is WebGL (same grid room) |
 | Skills | CSS dot grid lit by the cursor |
 | Contact | React Bits **Liquid Ether** (WebGL2, desktop only) |
 
@@ -78,12 +78,20 @@ The name is split into letters on the server and animated with CSS keyframes fro
   - **paused**: within ~2 viewports; context kept, render loop stopped
   - **released**: further away; unmounted, context freed
 - At most 2 surfaces render at once.
-- I chose separate canvases over one shared scissor canvas because the three pipelines (bloom, fluid sim, textured mesh) would have to be merged into one renderer, and the budget already gives the same practical cost.
+- I chose separate canvases over one shared scissor canvas because the three pipelines (hero glass + fluid, reel, Liquid Ether) would have to be merged into one renderer, and the budget already gives the same practical cost.
 - Every WebGL background sits on a static CSS gradient. That gradient is what shows with reduced motion, without WebGL2, and for Contact on phones.
 
-### Projects carousel
-React Bits **Circular Gallery**, adapted in place (`src/components/reactbits/CircularGallery.tsx`; the header lists every change, and `git log -p` shows the original):
-- Its wheel, drag and key handling is removed. Rotation comes from a pinned, scrubbed, snapping ScrollTrigger.
+### Hero glass D (`src/components/three/GlassD.tsx`)
+One three.js renderer, three stages per frame:
+- **Fluid**: a 128px stable-fluids sim (advect, splat, divergence, Jacobi pressure, gradient subtract). Cursor movement and scroll speed push velocity into it.
+- **Room**: a grid mapped onto the inside of a cylinder plus a violet glow, drawn to a render target. The fluid velocity offsets its UVs per colour channel, which gives the smeared chromatic trail.
+- **Glass**: an extruded, bevelled `D` (built from a `Shape`, no model file). Its shader samples the room texture behind it, magnified and bent by the normal with R/G/B at different offsets, plus fresnel rim and a reflection band. No transmission pass or env map, so it stays cheap.
+- The D eases toward the cursor and turns further as you scroll. Desktop only. Phones, reduced motion and no-WebGL2 get `StaticD` (SVG, same outline).
+
+### Projects reel (`src/components/three/CurvedReel.tsx`)
+The camera stands inside the same grid room; posters hang on the wall. The active project fills ~55% of the width and its neighbours peek in, bent around the curve.
+- Rotation comes from a pinned, scrubbed, snapping ScrollTrigger (one viewport of scroll per project). The reel eases toward it; scroll speed bulges the cards and splits their RGB channels.
+- The glow behind the reel blends the site violet with the active project's accent.
 - The canvas draws only posters and videos. Title, links, tech, the "Earlier work" label and the 1/6 counter are HTML.
 - Arrow keys and Prev/Next scroll the page to that project's snap point, so scroll stays the single source of truth.
 - Only the active project's video is decoded and uploaded as a texture.
@@ -98,7 +106,7 @@ React Bits **Circular Gallery**, adapted in place (`src/components/reactbits/Cir
 ### Third-party components
 | Source | Component | Use |
 |---|---|---|
-| React Bits (MIT + Commons Clause) | Silk, Liquid Ether, Circular Gallery, Decrypted Text | backgrounds, gallery, active title |
+| React Bits (MIT + Commons Clause) | Liquid Ether, Decrypted Text | Contact background, active title |
 | Kokonut UI (MIT) | Attract Button, Promise Toast | "Copy email" and its toast |
 
 They are vendored via the shadcn CLI. The only change to every vendored file is that "latest props" refs now sync in `useLayoutEffect` (the React Compiler lint rule forbids writing refs during render). Other edits are marked `[portfolio]`.

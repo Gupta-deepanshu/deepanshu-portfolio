@@ -25,7 +25,7 @@ export const projects: Project[] = [
     ],
     tech: ['Next.js', 'TypeScript', 'Supabase', 'Zustand', 'Zod', 'Vercel AI SDK', 'Gemini'],
     links: { live: PLACEHOLDER, github: PLACEHOLDER },
-    accent: '#FF6A3D',
+    accent: '#9D8CFF',
     posterAlt: 'Formsmith form builder interface',
     caseStudy: {
       // DRAFT

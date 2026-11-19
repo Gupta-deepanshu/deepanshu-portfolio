@@ -39,6 +39,7 @@ import {
   WebGLRenderTarget,
   type IUniform,
 } from 'three';
+import { QUAD_VERT, ROOM_CHUNK } from './room';
 
 interface Props {
   paused?: boolean;
@@ -49,10 +50,6 @@ interface Props {
 }
 
 /* ---------------------------------------------------------------- shaders */
-
-const QUAD_VERT = /* glsl */ `
-varying vec2 vUv;
-void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`;
 
 const ADVECT = /* glsl */ `
 uniform sampler2D uVel; uniform vec2 uTexel; uniform float uDt; uniform float uDiss;
@@ -107,20 +104,15 @@ const BACKGROUND = /* glsl */ `
 uniform sampler2D uVel; uniform vec2 uRes; uniform float uTime; uniform float uScroll; uniform vec2 uGlow;
 varying vec2 vUv;
 
-// Anti-aliased grid lines (fwidth keeps them ~1px at any resolution).
-float lines(vec2 g, float width) {
-  vec2 d = abs(fract(g - 0.5) - 0.5) / fwidth(g);
-  return 1.0 - clamp(min(d.x, d.y) - width, 0.0, 1.0);
-}
+${ROOM_CHUNK}
 
 vec3 room(vec2 uv) {
   float aspect = uRes.x / uRes.y;
   vec2 p = (uv - 0.5) * vec2(aspect, 1.0) * 1.15;
-  // Camera at the centre of a cylinder: columns follow the angle, rows bow outward.
-  vec2 wall = vec2(atan(p.x), p.y / sqrt(1.0 + p.x * p.x));
+  vec2 wall = cylinderWall(p);
   vec2 g = wall * 6.5 + vec2(uTime * 0.02, uScroll * 4.0);
-  float major = lines(g, 0.25);
-  float minor = lines(g * 5.0, 0.0);
+  float major = gridLines(g, 0.25);
+  float minor = gridLines(g * 5.0, 0.0);
 
   vec2 q = (uv - uGlow) * vec2(aspect, 1.0);
   float glow = exp(-dot(q, q) * 9.0) * (1.0 - 0.55 * clamp(uScroll, 0.0, 1.0));
