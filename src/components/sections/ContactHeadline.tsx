@@ -37,17 +37,18 @@ export function ContactHeadline({ id }: { id: string }) {
       mm.add(MEDIA.motion, () => {
         const tl = gsap.timeline({
           defaults: { ease: 'none' },
-          // Ends by the time the headline's top is just above mid-screen: Contact is the last
-          // section, so the page can't scroll much further than that.
-          scrollTrigger: { trigger: h, start: 'top 92%', end: 'top 50%', scrub: 0.6 },
+          // Spread over most of the headline's travel up the screen (it can reach about the
+          // top edge before the page ends, since Contact is the last section), with a
+          // softer scrub so the wipe trails the scroll a little.
+          scrollTrigger: { trigger: h, start: 'top 95%', end: 'top 18%', scrub: 1.2 },
         });
         h.querySelectorAll<HTMLElement>('[data-seg]').forEach((seg, i) => {
-          const at = i * 0.32;
+          const at = i * 0.45;
           const bar = seg.querySelector('[data-bar]');
           const chars = seg.querySelectorAll('[data-char]');
-          tl.fromTo(bar, { scaleX: 0, transformOrigin: '0% 50%' }, { scaleX: 1, duration: 0.3, ease: 'power2.in' }, at);
-          tl.fromTo(chars, { opacity: 0 }, { opacity: 1, duration: 0.04, stagger: 0.03 }, at + 0.22);
-          tl.to(bar, { scaleX: 0, transformOrigin: '100% 50%', duration: 0.3, ease: 'power2.out' }, at + 0.3);
+          tl.fromTo(bar, { scaleX: 0, transformOrigin: '0% 50%' }, { scaleX: 1, duration: 0.4, ease: 'power2.in' }, at);
+          tl.fromTo(chars, { opacity: 0 }, { opacity: 1, duration: 0.05, stagger: 0.04 }, at + 0.3);
+          tl.to(bar, { scaleX: 0, transformOrigin: '100% 50%', duration: 0.4, ease: 'power2.out' }, at + 0.42);
         });
       });
       return () => mm.revert();
