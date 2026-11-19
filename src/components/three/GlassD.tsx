@@ -34,11 +34,14 @@ import {
   OrthographicCamera,
   PerspectiveCamera,
   PlaneGeometry,
+  Quaternion,
   RGBAFormat,
   Scene,
   Shape,
   ShaderMaterial,
+  Euler,
   Vector2,
+  Vector3,
   Vector4,
   WebGLRenderer,
   WebGLRenderTarget,
@@ -129,7 +132,7 @@ vec3 room(vec2 uv) {
 
   vec3 violet = vec3(0.34, 0.19, 0.95);
   vec3 col = vec3(0.010, 0.009, 0.020);
-  col += violet * (glow * 0.42 * breathe + halo * 0.07) + vec3(0.03, 0.05, 0.22) * low * 0.18;
+  col += violet * (glow * 0.3 * breathe + halo * 0.07) + vec3(0.03, 0.05, 0.22) * low * 0.18;
   col += (major * 0.32 + minor * 0.05) * (vec3(0.055, 0.05, 0.09) + violet * (glow * 0.9 + halo * 0.25));
   vec2 vig = uv - 0.5;
   col *= 1.0 - dot(vig, vig) * 0.9;
@@ -144,19 +147,17 @@ vec4 text(vec2 uv) {
   return texture2D(uText, t) * vec4(1.0, 1.0, 1.0, uTextAlpha);
 }
 
-vec3 scene(vec2 uv) {
-  vec4 t = text(uv);
-  return mix(room(uv), t.rgb, t.a);
-}
-
 void main() {
   vec2 v = texture2D(uVel, vUv).xy;
   vec2 off = v * 0.0003;
   float speed = length(off);
-  vec3 col = vec3(scene(vUv - off).r, scene(vUv - off * 1.6).g, scene(vUv - off * 2.3).b);
+  vec3 col = vec3(room(vUv - off).r, room(vUv - off * 1.6).g, room(vUv - off * 2.3).b);
   // Thin iridescent sheen where the fluid is moving fast.
   vec3 hue = 0.5 + 0.5 * cos(6.2831 * (atan(v.y, v.x) / 6.2831 + vec3(0.0, 0.33, 0.67)));
   col += hue * smoothstep(0.0, 0.04, speed) * 0.06;
+  // The name only drifts a touch with the fluid (no channel split): it must stay readable.
+  vec4 t = text(vUv - off * 0.12);
+  col = mix(col, t.rgb, t.a);
   gl_FragColor = vec4(col, 1.0);
 }`;
 
@@ -207,7 +208,7 @@ void main() {
 
   // Thick-glass refraction: magnify what's behind toward the centre, bend by the
   // perturbed normal, and follow the cursor fluid.
-  vec2 lens = uCenter + (suv - uCenter) * 0.6;
+  vec2 lens = uCenter + (suv - uCenter) * 0.78;
   vec2 bend = pn.xy * 0.11 + texture2D(uVel, suv).xy * 0.0004;
 
   // Frosted patches: where the noise is high, jitter the samples (roughness).
@@ -220,11 +221,11 @@ void main() {
     acc.g += texture2D(uBg, lens - bend * 1.07 + j).g;
     acc.b += texture2D(uBg, lens - bend * 1.14 + j).b;
   }
-  vec3 col = acc / 6.0 * 1.15 + vec3(0.015, 0.012, 0.04);
+  vec3 col = acc / 6.0 * 1.1 + vec3(0.01, 0.008, 0.03);
 
   // Light trapped inside: violet ↔ magenta, drifting.
   float inner = noise(vObj * 1.2 + vec3(0.0, uTime * 0.1, 2.0));
-  col += mix(vec3(0.30, 0.14, 0.85), vec3(0.85, 0.25, 0.75), inner) * (0.06 + 0.16 * inner * inner);
+  col += mix(vec3(0.30, 0.14, 0.85), vec3(0.85, 0.25, 0.75), inner) * (0.03 + 0.16 * inner * inner);
 
   // Thin-film colour at grazing angles, fresnel rim, specular.
   vec3 film = 0.5 + 0.5 * cos(6.2831 * (fres * 1.4 + g.x * 0.15 + vec3(0.0, 0.33, 0.67)));
@@ -471,7 +472,7 @@ export default function GlassD({ paused = false, dpr = 1.25, interactive = true,
     }
 
     /* input */
-    const pointer = { x: 0.5, y: 0.5, nx: 0, ny: 0, moved: false };
+    const pointer = { x: 0.5, y: 0.5, px: 0, py: 0, dx: 0, dy: 0, moved: false };
     const last = new Vector2(0.5, 0.5);
     let lastMove = 0;
     const onPointer = (e: PointerEvent) => {
@@ -479,8 +480,12 @@ export default function GlassD({ paused = false, dpr = 1.25, interactive = true,
       const r = canvas.getBoundingClientRect();
       pointer.x = (e.clientX - r.left) / r.width;
       pointer.y = 1 - (e.clientY - r.top) / r.height;
-      pointer.nx = (e.clientX / window.innerWidth) * 2 - 1;
-      pointer.ny = (e.clientY / window.innerHeight) * 2 - 1;
+      if (lastMove) {
+        pointer.dx += (e.clientX - pointer.px) / window.innerWidth;
+        pointer.dy += (e.clientY - pointer.py) / window.innerHeight;
+      }
+      pointer.px = e.clientX;
+      pointer.py = e.clientY;
       pointer.moved = true;
       lastMove = performance.now();
     };
@@ -499,7 +504,15 @@ export default function GlassD({ paused = false, dpr = 1.25, interactive = true,
     let raf = 0;
     let prev = performance.now();
     let time = 0;
-    const rot = { x: 0, y: 0 };
+    // Free rotation with momentum: cursor movement adds angular velocity (world axes),
+    // friction slows it, and after a pause it eases back to face the viewer.
+    const spin = new Quaternion();
+    const omega = new Vector3();
+    const step = new Quaternion();
+    const axis = new Vector3();
+    const rest = new Quaternion();
+    const restEuler = new Euler();
+    let lastInput = 0;
     let firstFrame = true;
     const target = { x: 0, y: 0.15, scale: 1 };
 
@@ -567,25 +580,43 @@ export default function GlassD({ paused = false, dpr = 1.25, interactive = true,
             (b.height + textPad * 2) / c.height,
           );
         }
-        // The D sits on the heading's centre, about as tall as the two lines.
+        // The D sits on the heading's centre, ~2/3 of the viewport tall (like alche's A).
         const cx = ((b.left + b.width / 2 - c.left) / c.width) * 2 - 1;
         const cy = 1 - ((b.top + b.height / 2 - c.top) / c.height) * 2;
         target.x = cx * halfW;
         target.y = cy * halfH;
-        const px = Math.min(b.height * 1.02, window.innerHeight * 0.55);
+        const px = Math.min(window.innerHeight * 0.62, b.width * 0.55);
         target.scale = ((px / c.height) * 2 * halfH) / 2.3; // geometry is ~2.3 tall with bevel
       }
       const opacity = scroller ? parseFloat(scroller.style.opacity || '1') : 1;
       if (textReady) textAlpha = Math.min(1, textAlpha + dt / 0.6);
 
-      // 3. the D: ease toward the cursor, turn further with scroll
+      // 3. the D: spin with momentum
       const scroll = Math.min(1.5, sy / window.innerHeight);
-      const ease = 1 - Math.exp(-dt * 2.4);
-      const targetY = pointer.nx * 0.8 + Math.sin(time * 0.35) * 0.2 + scroll * 1.8;
-      const targetX = pointer.ny * 0.5 + Math.sin(time * 0.27 + 1) * 0.1 + scroll * 0.4;
-      rot.y += (targetY - rot.y) * ease;
-      rot.x += (targetX - rot.x) * ease;
-      glass.rotation.set(rot.x, rot.y, Math.sin(time * 0.2) * 0.05);
+      if (pointer.dx || pointer.dy) {
+        // Horizontal drag turns it about Y, vertical about X (a trackball flick).
+        omega.y += pointer.dx * 16;
+        omega.x += pointer.dy * 16;
+        pointer.dx = pointer.dy = 0;
+        lastInput = now;
+      }
+      if (dScroll !== 0) {
+        omega.y += (dScroll / window.innerHeight) * 5;
+        lastInput = now;
+      }
+      omega.clampLength(0, 14);
+      omega.multiplyScalar(Math.exp(-dt * 1.4));
+      const w = omega.length();
+      if (w > 1e-4) {
+        step.setFromAxisAngle(axis.copy(omega).divideScalar(w), w * dt);
+        spin.premultiply(step).normalize();
+      }
+      if (now - lastInput > 2500) {
+        // Settle back to facing forward with a gentle idle sway.
+        rest.setFromEuler(restEuler.set(Math.sin(time * 0.27 + 1) * 0.12, Math.sin(time * 0.35) * 0.3, Math.sin(time * 0.2) * 0.05));
+        spin.slerp(rest, 1 - Math.exp(-dt * 0.9));
+      }
+      glass.quaternion.copy(spin);
       glass.position.set(target.x, target.y + Math.sin(time * 0.6) * 0.04, 0.4);
       glass.scale.setScalar(target.scale * (1 - scroll * 0.15));
       center.set((target.x / halfW) * 0.5 + 0.5, (target.y / halfH) * 0.5 + 0.5);
