@@ -77,7 +77,7 @@ One fixed **ambient background** (`AmbientBackground.tsx`, CSS only) sits behind
 | Skills | CSS dot grid lit by the cursor |
 | Contact | React Bits **Liquid Ether** (WebGL2, desktop only) |
 
-The Contact headline (`ContactHeadline.tsx`) comes in like alche.studio's mission copy: each line sits on a highlight bar (off-white; the accent word on violet) that wipes in from the left while its letters type in behind it, scrubbed with scroll. Server-rendered in its final state (no-JS, reduced motion); the <h2> has the full sentence as aria-label.
+The Contact headline (`ContactHeadline.tsx`) comes in like alche.studio's mission copy: per line, a violet bar wipes in from the left, the letters type in behind it, then the bar retracts to the right, leaving plain off-white text (the accent word in violet); scrubbed with scroll. Server-rendered in its final state (no-JS, reduced motion); the <h2> has the full sentence as aria-label.
 
 - Two IntersectionObservers sort each WebGL surface into one of three states:
   - **active**: near the viewport; mounted and rendering

@@ -1,13 +1,13 @@
 'use client';
 
 /**
- * Contact headline, after alche.studio's mission/vision copy: each line sits on a
- * solid highlight bar. While scrolling, each bar wipes in from the left, then its
- * letters type in behind the wipe. Scrubbed, so it plays forward and back with the
- * scroll. Inverted for our dark page: off-white bars with dark text, the accent word
- * on a violet bar.
+ * Contact headline, animated after alche.studio's mission/vision copy but with no
+ * background behind the text: per line, a violet bar wipes in from the left, the
+ * letters type in behind it, then the bar retracts to the right, leaving plain
+ * off-white text (the accent word in violet). Scrubbed, so it plays forward and back
+ * with the scroll.
  *
- * - Server-rendered final state (bars full, letters visible): no-JS and reduced
+ * - Server-rendered final state (bars retracted, letters visible): no-JS and reduced
  *   motion see the finished headline; GSAP only sets the from-state when motion is on.
  * - Accessible: the <h2> carries the full sentence in aria-label; bars and letter
  *   spans are aria-hidden.
@@ -43,13 +43,11 @@ export function ContactHeadline({ id }: { id: string }) {
         });
         h.querySelectorAll<HTMLElement>('[data-seg]').forEach((seg, i) => {
           const at = i * 0.32;
-          tl.fromTo(seg.querySelector('[data-bar]'), { scaleX: 0 }, { scaleX: 1, duration: 0.45, ease: 'power2.inOut' }, at);
-          tl.fromTo(
-            seg.querySelectorAll('[data-char]'),
-            { opacity: 0 },
-            { opacity: 1, duration: 0.04, stagger: 0.035 },
-            at + 0.15,
-          );
+          const bar = seg.querySelector('[data-bar]');
+          const chars = seg.querySelectorAll('[data-char]');
+          tl.fromTo(bar, { scaleX: 0, transformOrigin: '0% 50%' }, { scaleX: 1, duration: 0.3, ease: 'power2.in' }, at);
+          tl.fromTo(chars, { opacity: 0 }, { opacity: 1, duration: 0.04, stagger: 0.03 }, at + 0.22);
+          tl.to(bar, { scaleX: 0, transformOrigin: '100% 50%', duration: 0.3, ease: 'power2.out' }, at + 0.3);
         });
       });
       return () => mm.revert();
@@ -62,14 +60,14 @@ export function ContactHeadline({ id }: { id: string }) {
       ref={ref}
       id={id}
       aria-label={LABEL}
-      className="mt-6 flex flex-col items-start gap-[0.12em] font-display text-[clamp(1.9rem,6vw,5.5rem)] font-semibold uppercase leading-none"
+      className="mt-6 flex flex-col items-start font-display text-[clamp(1.9rem,6vw,5.5rem)] font-semibold uppercase leading-[0.95]"
     >
       {LINES.map((line, l) => (
-        <span key={l} aria-hidden="true" className="flex gap-[0.12em] whitespace-nowrap">
+        <span key={l} aria-hidden="true" className="flex gap-[0.28em] whitespace-nowrap">
           {line.map((seg) => (
-            <span key={seg.text} data-seg="" className="relative inline-block px-[0.14em] py-[0.08em]">
-              <span data-bar="" className={cn('absolute inset-0 origin-left', seg.accent ? 'bg-accent' : 'bg-fg')} />
-              <span className="relative text-bg">
+            <span key={seg.text} data-seg="" className="relative inline-block">
+              <span data-bar="" className="absolute -inset-x-[0.08em] inset-y-[0.04em] bg-accent" style={{ transform: 'scaleX(0)' }} />
+              <span className={cn('relative', seg.accent ? 'text-accent' : 'text-fg')}>
                 {[...seg.text].map((ch, c) => (
                   <span key={c} data-char="" className="inline-block whitespace-pre">
                     {ch}
