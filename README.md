@@ -84,8 +84,9 @@ The name is split into letters on the server and animated with CSS keyframes fro
 ### Hero glass D (`src/components/three/GlassD.tsx`)
 One three.js renderer, three stages per frame:
 - **Fluid**: a 128px stable-fluids sim (advect, splat, divergence, Jacobi pressure, gradient subtract). Cursor movement and scroll speed push velocity into it.
-- **Room**: a grid mapped onto the inside of a cylinder plus a violet glow, drawn to a render target. The fluid velocity offsets its UVs per colour channel, which gives the smeared chromatic trail.
-- **Glass**: an extruded, bevelled `D` (built from a `Shape`, no model file). Its shader samples the room texture behind it, magnified and bent by the normal with R/G/B at different offsets, plus fresnel rim and a reflection band. No transmission pass or env map, so it stays cheap.
+- **Room + name**: a grid mapped onto the inside of a cylinder, a violet glow, and the name, drawn to a render target. The fluid velocity offsets its UVs per colour channel, which gives the smeared chromatic trail through the grid and the letters.
+- **Glass**: an extruded, bevelled `D` (built from a `Shape`, no model file), centred on the name. Its shader samples that texture behind it: magnified, bent by a noise-perturbed "liquid" normal, frosted in drifting patches (jittered samples), slight R/G/B dispersion, inner glow, thin-film colour, fresnel rim and specular. No transmission pass or env map, so it stays cheap.
+- **Why the name is in the canvas**: the glass must refract it, and one canvas can't sit both behind and in front of HTML. The `<h1>` stays the source of truth: once fonts and its letter entrance finish, each `.hero-char` box is copied into a 2D-canvas texture at the exact position the browser laid it out, then the `<h1>` fades to `opacity: 0` (still in the DOM for screen readers, search and selection). The copy follows the `<h1>` rect and the scroll-out opacity every frame. Phones, reduced motion and no-WebGL never hide the `<h1>`.
 - The D eases toward the cursor and turns further as you scroll. Desktop only. Phones, reduced motion and no-WebGL2 get `StaticD` (SVG, same outline).
 
 ### Projects reel (`src/components/three/CurvedReel.tsx`)

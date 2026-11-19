@@ -380,3 +380,25 @@ html[data-intro='skip'] .hero-fade {
     transform: scaleY(1);
   }
 }
+
+/* ------------------------------------------------- hero name ↔ WebGL copy
+   GlassD sets data-gl-text once its copy of the name is drawn; the real <h1>
+   cross-fades out but stays in the DOM (screen readers, search, selection). */
+[data-hero-name] {
+  transition: opacity 0.6s var(--ease-out);
+}
+[data-hero-name][data-gl-text] {
+  opacity: 0;
+}
+
+/* Static D: shown on phones, with reduced motion, and (via data-static-only, set
+   after hydration) on desktops without WebGL2. Hidden where the glass scene runs,
+   so it never flashes before the canvas fades in. */
+@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
+  .static-d {
+    display: none;
+  }
+  [data-static-only] .static-d {
+    display: block;
+  }
+}

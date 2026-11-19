@@ -1,27 +1,32 @@
 'use client';
 
 /**
- * Hero scene: a glass "D" floating in a curved grid room.
+ * Hero scene: a glass "D" floating in front of the name, in a curved grid room.
  *
  * Everything runs in ONE WebGL context (counts as one slot in the GL budget):
  *
  *  1. Fluid sim (low-res, ping-pong half-float targets): the cursor and the scroll
  *     push velocity into it. Classic stable-fluids loop:
  *     advect → splat → divergence → pressure (Jacobi) → subtract gradient.
- *  2. Background pass → `bgTarget`: a grid on the inside of a cylinder plus a violet
- *     glow. Its UVs are displaced by the fluid velocity with a per-channel offset,
- *     which gives the smeared, chromatic "not quite ripples" trail.
- *  3. Screen: copy `bgTarget`, then draw the extruded D. The glass shader samples
- *     `bgTarget` at its own screen position, bent by the surface normal and
- *     magnified toward the letter's centre (reads as thick glass), with R/G/B
- *     sampled at slightly different offsets (dispersion), plus fresnel rim and
- *     two fake specular lights. No env map, no transmission pass: cheap.
+ *  2. Background pass → `bgTarget`: grid room + violet glow + the NAME. The fluid
+ *     velocity offsets the UVs per colour channel, so the cursor leaves a smeared,
+ *     chromatic trail through the grid and the letters.
+ *  3. Screen: copy `bgTarget`, then draw the extruded D on top. Its shader samples
+ *     `bgTarget` behind itself: magnified toward the centre, bent by a noise-
+ *     perturbed ("liquid") normal, frosted in drifting patches (jittered multi-
+ *     sampling), R/G/B at different offsets, plus an inner glow, thin-film colour
+ *     at grazing angles, fresnel rim and specular. No transmission pass or env map.
  *
- * The D rotates toward the cursor (eased, so it feels heavy) and turns further as
- * the hero scrolls away. `paused` stops the loop; unmount frees the context.
+ * Why the name is drawn in WebGL: the glass has to refract it, and the canvas can't
+ * be both behind and in front of HTML. The <h1> stays the source of truth: its
+ * letters are measured where the browser laid them out and copied into a texture
+ * (same font, same positions), then the <h1> fades to opacity 0 — still in the DOM
+ * for screen readers, search and selection. It tracks the <h1> every frame, so the
+ * GSAP scroll-out still applies. On unmount the <h1> is shown again.
  */
 import { useEffect, useRef } from 'react';
 import {
+  CanvasTexture,
   ExtrudeGeometry,
   HalfFloatType,
   LinearFilter,
@@ -34,7 +39,7 @@ import {
   Shape,
   ShaderMaterial,
   Vector2,
-  Vector3,
+  Vector4,
   WebGLRenderer,
   WebGLRenderTarget,
   type IUniform,
@@ -47,6 +52,8 @@ interface Props {
   dpr?: number;
   /** Cursor drives rotation + fluid (fine pointers only). */
   interactive?: boolean;
+  /** The heading drawn behind the glass (its letters must be `.hero-char` spans). */
+  textSelector?: string;
 }
 
 /* ---------------------------------------------------------------- shaders */
@@ -102,45 +109,54 @@ void main() {
 
 const BACKGROUND = /* glsl */ `
 uniform sampler2D uVel; uniform vec2 uRes; uniform float uTime; uniform float uScroll; uniform vec2 uGlow;
+uniform sampler2D uText; uniform vec4 uTextRect; uniform float uTextAlpha;
 varying vec2 vUv;
-
 ${ROOM_CHUNK}
 
 vec3 room(vec2 uv) {
   float aspect = uRes.x / uRes.y;
   vec2 p = (uv - 0.5) * vec2(aspect, 1.0) * 1.15;
-  vec2 wall = cylinderWall(p);
-  vec2 g = wall * 6.5 + vec2(uTime * 0.02, uScroll * 4.0);
+  vec2 g = cylinderWall(p) * 6.5 + vec2(uTime * 0.02, uScroll * 4.0);
   float major = gridLines(g, 0.25);
   float minor = gridLines(g * 5.0, 0.0);
 
   vec2 q = (uv - uGlow) * vec2(aspect, 1.0);
-  float glow = exp(-dot(q, q) * 9.0) * (1.0 - 0.55 * clamp(uScroll, 0.0, 1.0));
+  float glow = exp(-dot(q, q) * 7.0) * (1.0 - 0.55 * clamp(uScroll, 0.0, 1.0));
+  float halo = exp(-dot(q, q) * 1.8);
   float breathe = 0.85 + 0.15 * sin(uTime * 0.35);
   vec2 q2 = (uv - vec2(0.18, 0.15)) * vec2(aspect, 1.0);
   float low = exp(-dot(q2, q2) * 2.5);
-  float halo = exp(-dot(q, q) * 1.8);
 
   vec3 violet = vec3(0.34, 0.19, 0.95);
   vec3 col = vec3(0.010, 0.009, 0.020);
   col += violet * (glow * 0.42 * breathe + halo * 0.07) + vec3(0.03, 0.05, 0.22) * low * 0.18;
   col += (major * 0.32 + minor * 0.05) * (vec3(0.055, 0.05, 0.09) + violet * (glow * 0.9 + halo * 0.25));
+  vec2 vig = uv - 0.5;
+  col *= 1.0 - dot(vig, vig) * 0.9;
+  // Darker toward the bottom so the section dissolves into About without a seam.
+  col *= mix(0.25, 1.0, smoothstep(0.08, 0.6, uv.y));
   return col;
+}
+
+vec4 text(vec2 uv) {
+  vec2 t = (uv - uTextRect.xy) / uTextRect.zw;
+  if (t.x < 0.0 || t.y < 0.0 || t.x > 1.0 || t.y > 1.0) return vec4(0.0);
+  return texture2D(uText, t) * vec4(1.0, 1.0, 1.0, uTextAlpha);
+}
+
+vec3 scene(vec2 uv) {
+  vec4 t = text(uv);
+  return mix(room(uv), t.rgb, t.a);
 }
 
 void main() {
   vec2 v = texture2D(uVel, vUv).xy;
-  vec2 off = v * 0.00045;
+  vec2 off = v * 0.0003;
   float speed = length(off);
-  vec3 col = vec3(room(vUv - off).r, room(vUv - off * 1.6).g, room(vUv - off * 2.3).b);
+  vec3 col = vec3(scene(vUv - off).r, scene(vUv - off * 1.6).g, scene(vUv - off * 2.3).b);
   // Thin iridescent sheen where the fluid is moving fast.
   vec3 hue = 0.5 + 0.5 * cos(6.2831 * (atan(v.y, v.x) / 6.2831 + vec3(0.0, 0.33, 0.67)));
   col += hue * smoothstep(0.0, 0.04, speed) * 0.06;
-  vec2 vig = vUv - 0.5;
-  col *= 1.0 - dot(vig, vig) * 0.9;
-  // Built-in scrim: darker toward the bottom (under the name) so text keeps full contrast
-  // and the section dissolves into About without a seam.
-  col *= mix(0.25, 1.0, smoothstep(0.08, 0.6, vUv.y));
   gl_FragColor = vec4(col, 1.0);
 }`;
 
@@ -161,34 +177,62 @@ void main() {
 const GLASS_FRAG = /* glsl */ `
 uniform sampler2D uBg; uniform sampler2D uVel; uniform vec2 uRes; uniform vec2 uCenter; uniform float uTime;
 varying vec3 vNormal; varying vec3 vViewPos; varying vec3 vObj;
+
+float hash(vec3 p) {
+  p = fract(p * 0.3183099 + 0.1); p *= 17.0;
+  return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
+}
+float noise(vec3 x) {
+  vec3 i = floor(x); vec3 f = fract(x); f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(mix(hash(i), hash(i + vec3(1,0,0)), f.x), mix(hash(i + vec3(0,1,0)), hash(i + vec3(1,1,0)), f.x), f.y),
+             mix(mix(hash(i + vec3(0,0,1)), hash(i + vec3(1,0,1)), f.x), mix(hash(i + vec3(0,1,1)), hash(i + vec3(1,1,1)), f.x), f.y), f.z);
+}
+vec3 noiseGrad(vec3 p) {
+  const float e = 0.08;
+  return vec3(noise(p + vec3(e,0,0)) - noise(p - vec3(e,0,0)),
+              noise(p + vec3(0,e,0)) - noise(p - vec3(0,e,0)),
+              noise(p + vec3(0,0,e)) - noise(p - vec3(0,0,e))) / (2.0 * e);
+}
+float rand(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
+
 void main() {
   vec2 suv = gl_FragCoord.xy / uRes;
   vec3 n = normalize(vNormal);
   vec3 V = normalize(-vViewPos);
-  float facing = max(dot(n, V), 0.0);
-  float fres = pow(1.0 - facing, 3.0);
 
-  // Thick-glass look: magnify toward the centre, bend by the normal, follow the fluid.
-  vec2 lens = uCenter + (suv - uCenter) * 0.7;
-  // Slow internal wobble so the flat faces still distort what is behind them.
-  vec2 wobble = vec2(sin(vViewPos.y * 7.0 + uTime * 0.6), cos(vViewPos.x * 6.0 - uTime * 0.5)) * 0.012;
-  vec2 bend = n.xy * 0.12 + wobble + texture2D(uVel, suv).xy * 0.0003;
-  vec3 bg = vec3(
-    texture2D(uBg, lens - bend).r,
-    texture2D(uBg, lens - bend * 1.4).g,
-    texture2D(uBg, lens - bend * 1.9).b
-  );
-  vec3 col = bg * 1.05 + vec3(0.012, 0.01, 0.03);
-  // Soft diagonal reflection band that slides across the faces as the D turns.
-  float band = vObj.x * 0.62 + vObj.y * 0.78 - n.x * 1.6 - n.y * 0.6;
-  col += exp(-pow(band * 3.2 - 0.4, 2.0)) * vec3(0.16, 0.15, 0.24) * (0.4 + 0.6 * facing);
-  col += exp(-pow(band * 9.0 + 3.2, 2.0)) * vec3(0.10, 0.10, 0.16);
+  // Liquid surface: the normal is bent by slowly drifting 3D noise.
+  vec3 g = noiseGrad(vObj * 2.4 + vec3(0.0, uTime * 0.12, uTime * 0.08));
+  vec3 pn = normalize(n + g * 0.22);
+  float fres = pow(1.0 - max(dot(n, V), 0.0), 2.5);
 
-  vec3 R = reflect(-V, n);
-  float spec = pow(max(dot(R, normalize(vec3(-0.6, 0.75, 0.55))), 0.0), 48.0) * 1.1
-             + pow(max(dot(R, normalize(vec3(0.85, -0.25, 0.45))), 0.0), 16.0) * 0.28;
-  col += spec * vec3(0.96, 0.94, 1.0);
-  col += fres * vec3(0.62, 0.52, 1.0) * 1.1;
+  // Thick-glass refraction: magnify what's behind toward the centre, bend by the
+  // perturbed normal, and follow the cursor fluid.
+  vec2 lens = uCenter + (suv - uCenter) * 0.6;
+  vec2 bend = pn.xy * 0.11 + texture2D(uVel, suv).xy * 0.0004;
+
+  // Frosted patches: where the noise is high, jitter the samples (roughness).
+  float rough = smoothstep(0.5, 0.8, noise(vObj * 1.7 + vec3(4.0, 0.0, uTime * 0.05))) * 0.012;
+  vec3 acc = vec3(0.0);
+  for (int i = 0; i < 6; i++) {
+    float fi = float(i);
+    vec2 j = (vec2(rand(suv * 91.7 + fi), rand(suv.yx * 37.3 + fi * 1.7)) - 0.5) * rough;
+    acc.r += texture2D(uBg, lens - bend + j).r;
+    acc.g += texture2D(uBg, lens - bend * 1.07 + j).g;
+    acc.b += texture2D(uBg, lens - bend * 1.14 + j).b;
+  }
+  vec3 col = acc / 6.0 * 1.15 + vec3(0.015, 0.012, 0.04);
+
+  // Light trapped inside: violet ↔ magenta, drifting.
+  float inner = noise(vObj * 1.2 + vec3(0.0, uTime * 0.1, 2.0));
+  col += mix(vec3(0.30, 0.14, 0.85), vec3(0.85, 0.25, 0.75), inner) * (0.06 + 0.16 * inner * inner);
+
+  // Thin-film colour at grazing angles, fresnel rim, specular.
+  vec3 film = 0.5 + 0.5 * cos(6.2831 * (fres * 1.4 + g.x * 0.15 + vec3(0.0, 0.33, 0.67)));
+  col += film * fres * 0.14;
+  col += fres * vec3(0.55, 0.48, 1.0) * 0.55;
+  vec3 R = reflect(-V, pn);
+  col += pow(max(dot(R, normalize(vec3(-0.5, 0.75, 0.6))), 0.0), 60.0) * vec3(1.0, 0.97, 1.0);
+  col += pow(max(dot(R, normalize(vec3(0.8, -0.3, 0.5))), 0.0), 20.0) * 0.25;
   gl_FragColor = vec4(col, 1.0);
 }`;
 
@@ -212,15 +256,51 @@ function createD() {
   outer.holes.push(counter);
 
   const geometry = new ExtrudeGeometry(outer, {
-    depth: 0.42,
+    depth: 0.6,
     curveSegments: 56,
     bevelEnabled: true,
-    bevelThickness: 0.14,
-    bevelSize: 0.09,
+    bevelThickness: 0.16,
+    bevelSize: 0.1,
     bevelSegments: 10,
   });
   geometry.center();
   return geometry;
+}
+
+/* ----------------------------------------------------------- name texture */
+
+interface TextLayer {
+  canvas: HTMLCanvasElement;
+  /** CSS-px padding around the heading's box inside the texture. */
+  pad: number;
+}
+
+/**
+ * Copy the heading's letters into a 2D canvas, each at the exact box the browser
+ * gave its `.hero-char` span. Baseline: CSS centres the font's content area
+ * (ascent + descent) inside the line box, so baseline = top + half-leading + ascent.
+ */
+function drawHeading(h1: HTMLElement, pixelRatio: number, into?: HTMLCanvasElement): TextLayer {
+  const box = h1.getBoundingClientRect();
+  const pad = Math.round(box.height * 0.1);
+  const canvas = into ?? document.createElement('canvas');
+  canvas.width = Math.ceil((box.width + pad * 2) * pixelRatio);
+  canvas.height = Math.ceil((box.height + pad * 2) * pixelRatio);
+  const ctx = canvas.getContext('2d')!;
+  ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const cs = getComputedStyle(h1);
+  ctx.font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+  ctx.textBaseline = 'alphabetic';
+  const m = ctx.measureText('Hg');
+  const ascent = m.fontBoundingBoxAscent;
+  const contentHeight = ascent + m.fontBoundingBoxDescent;
+  h1.querySelectorAll<HTMLElement>('.hero-char').forEach((ch) => {
+    const r = ch.getBoundingClientRect();
+    ctx.fillStyle = getComputedStyle(ch).color;
+    ctx.fillText(ch.textContent ?? '', r.left - box.left + pad, r.top - box.top + pad + (r.height - contentHeight) / 2 + ascent);
+  });
+  return { canvas, pad };
 }
 
 /* ------------------------------------------------------------- component */
@@ -228,7 +308,7 @@ function createD() {
 const SIM_SIZE = 128; // fluid grid along the short side
 const PRESSURE_ITERATIONS = 14;
 
-export default function GlassD({ paused = false, dpr = 1.25, interactive = true }: Props) {
+export default function GlassD({ paused = false, dpr = 1.25, interactive = true, textSelector = '[data-hero-name]' }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const pausedRef = useRef(paused);
   const startRef = useRef<(() => void) | null>(null);
@@ -254,7 +334,8 @@ export default function GlassD({ paused = false, dpr = 1.25, interactive = true 
       canvas.remove();
       return; // no context: the static fallback underneath stays visible
     }
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, dpr));
+    const pixelRatio = Math.min(window.devicePixelRatio, dpr);
+    renderer.setPixelRatio(pixelRatio);
     renderer.autoClear = false;
 
     /* fullscreen-pass plumbing */
@@ -285,7 +366,6 @@ export default function GlassD({ paused = false, dpr = 1.25, interactive = true 
     let pressure = [rt(1, 1), rt(1, 1)];
     const divergence = rt(1, 1);
     const simTexel = new Vector2();
-    let simAspect = 1;
 
     const advect = mat(ADVECT, { uVel: { value: null }, uTexel: { value: simTexel }, uDt: { value: 0 }, uDiss: { value: 1 } });
     const splat = mat(SPLAT, {
@@ -299,16 +379,30 @@ export default function GlassD({ paused = false, dpr = 1.25, interactive = true 
     const pressureMat = mat(PRESSURE, { uP: { value: null }, uDiv: { value: divergence.texture }, uTexel: { value: simTexel } });
     const gradMat = mat(GRADIENT, { uP: { value: null }, uVel: { value: null }, uTexel: { value: simTexel } });
 
+    /* name texture (filled once the heading has finished its entrance) */
+    const textCanvas = document.createElement('canvas');
+    textCanvas.width = textCanvas.height = 1;
+    const textTexture = new CanvasTexture(textCanvas);
+    textTexture.minFilter = LinearFilter;
+    textTexture.generateMipmaps = false;
+    const textRect = new Vector4(0, 0, 1, 1);
+    let textPad = 0;
+    let textReady = false;
+    let textAlpha = 0;
+
     /* background + screen */
     const bgTarget = new WebGLRenderTarget(1, 1, { minFilter: LinearFilter, magFilter: LinearFilter, depthBuffer: false });
     const res = new Vector2();
-    const glowCenter = new Vector2(0.62, 0.55);
+    const center = new Vector2(0.5, 0.55);
     const bgMat = mat(BACKGROUND, {
       uVel: { value: null },
       uRes: { value: res },
       uTime: { value: 0 },
       uScroll: { value: 0 },
-      uGlow: { value: glowCenter },
+      uGlow: { value: center },
+      uText: { value: textTexture },
+      uTextRect: { value: textRect },
+      uTextAlpha: { value: 0 },
     });
     const copyMat = mat(COPY, { uTex: { value: bgTarget.texture } });
 
@@ -324,48 +418,57 @@ export default function GlassD({ paused = false, dpr = 1.25, interactive = true 
         uBg: { value: bgTarget.texture },
         uVel: { value: null },
         uRes: { value: res },
-        uCenter: { value: glowCenter },
+        uCenter: { value: center },
         uTime: { value: 0 },
       },
     });
     const glass = new Mesh(glassGeo, glassMat);
     scene.add(glass);
-    const home = new Vector3();
-    let baseScale = 1;
-    const projected = new Vector3();
+    let halfW = 1;
+    let halfH = 1;
 
     /* sizing */
     const resize = () => {
       const w = Math.max(1, container.clientWidth);
       const h = Math.max(1, container.clientHeight);
       renderer.setSize(w, h, false);
-      const buf = renderer.getDrawingBufferSize(new Vector2());
-      res.copy(buf);
-      bgTarget.setSize(buf.x, buf.y);
+      renderer.getDrawingBufferSize(res);
+      bgTarget.setSize(res.x, res.y);
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
+      halfH = Math.tan((camera.fov * Math.PI) / 360) * camera.position.z;
+      halfW = halfH * camera.aspect;
 
-      simAspect = w / h;
-      const sw = Math.round(simAspect >= 1 ? SIM_SIZE * simAspect : SIM_SIZE);
-      const sh = Math.round(simAspect >= 1 ? SIM_SIZE : SIM_SIZE / simAspect);
+      const aspect = w / h;
+      const sw = Math.round(aspect >= 1 ? SIM_SIZE * aspect : SIM_SIZE);
+      const sh = Math.round(aspect >= 1 ? SIM_SIZE : SIM_SIZE / aspect);
       [...vel, ...pressure, divergence].forEach((t) => t.setSize(sw, sh));
       simTexel.set(1 / sw, 1 / sh);
-      splat.uniforms.uAspect.value = simAspect;
-
-      // Layout: right of centre on landscape screens, centred and smaller on portrait.
-      const halfH = Math.tan((camera.fov * Math.PI) / 360) * camera.position.z;
-      const halfW = halfH * camera.aspect;
-      if (camera.aspect >= 1) {
-        home.set(halfW * 0.36, halfH * 0.12, 0);
-        baseScale = Math.min(1.05, halfW * 0.34);
-      } else {
-        home.set(0, halfH * 0.28, 0);
-        baseScale = halfW * 0.5;
-      }
+      splat.uniforms.uAspect.value = aspect;
     };
     resize();
     const resizeObserver = new ResizeObserver(resize);
     resizeObserver.observe(container);
+
+    /* the heading: wait for fonts + its letter entrance, then copy it in */
+    const h1 = document.querySelector<HTMLElement>(textSelector);
+    const scroller = h1?.closest<HTMLElement>('[data-hero-content]') ?? null;
+    let disposed = false;
+    const paintText = () => {
+      if (!h1 || disposed) return;
+      textPad = drawHeading(h1, pixelRatio, textCanvas).pad;
+      textTexture.dispose(); // canvas size may change: re-allocate on next upload
+      textTexture.needsUpdate = true;
+      textReady = true;
+    };
+    const headingObserver = new ResizeObserver(() => textReady && paintText());
+    if (h1) {
+      const entrance = h1.getAnimations({ subtree: true }).map((a) => a.finished.catch(() => undefined));
+      Promise.all([document.fonts.ready, ...entrance]).then(() => {
+        paintText();
+        headingObserver.observe(h1);
+      });
+    }
 
     /* input */
     const pointer = { x: 0.5, y: 0.5, nx: 0, ny: 0, moved: false };
@@ -398,6 +501,7 @@ export default function GlassD({ paused = false, dpr = 1.25, interactive = true 
     let time = 0;
     const rot = { x: 0, y: 0 };
     let firstFrame = true;
+    const target = { x: 0, y: 0.15, scale: 1 };
 
     const frame = (now: number) => {
       raf = 0;
@@ -419,15 +523,14 @@ export default function GlassD({ paused = false, dpr = 1.25, interactive = true 
         const fx = ((pointer.x - last.x) / Math.max(dt, 1e-3)) * sw * 0.55 * k;
         const fy = ((pointer.y - last.y) / Math.max(dt, 1e-3)) * sw * 0.55 * k;
         const m = Math.hypot(fx, fy);
-        const cap = 2600;
-        const s = m > cap ? cap / m : 1;
+        const s = m > 2600 ? 2600 / m : 1;
         addForce(pointer.x, pointer.y, fx * s, fy * s);
         pointer.moved = false;
       } else if (now - lastMove > 2500) {
         // Idle: a slow drifting stir so the room never looks frozen.
         const ax = 0.5 + 0.32 * Math.sin(time * 0.31);
         const ay = 0.5 + 0.22 * Math.sin(time * 0.47 + 1.3);
-        addForce(ax, ay, Math.cos(time * 0.31) * 60, Math.cos(time * 0.47 + 1.3) * 60);
+        addForce(ax, ay, Math.cos(time * 0.31) * 25, Math.cos(time * 0.47 + 1.3) * 25);
       }
       last.set(pointer.x, pointer.y);
 
@@ -452,24 +555,46 @@ export default function GlassD({ paused = false, dpr = 1.25, interactive = true 
       run(gradMat, vel[1]);
       vel = [vel[1], vel[0]];
 
-      // 2. the D: ease toward the cursor, turn further with scroll
+      // 2. follow the heading (two layout reads per frame, no writes in between)
+      const c = canvas.getBoundingClientRect();
+      if (h1) {
+        const b = h1.getBoundingClientRect();
+        if (textReady) {
+          textRect.set(
+            (b.left - textPad - c.left) / c.width,
+            1 - (b.bottom + textPad - c.top) / c.height,
+            (b.width + textPad * 2) / c.width,
+            (b.height + textPad * 2) / c.height,
+          );
+        }
+        // The D sits on the heading's centre, about as tall as the two lines.
+        const cx = ((b.left + b.width / 2 - c.left) / c.width) * 2 - 1;
+        const cy = 1 - ((b.top + b.height / 2 - c.top) / c.height) * 2;
+        target.x = cx * halfW;
+        target.y = cy * halfH;
+        const px = Math.min(b.height * 1.02, window.innerHeight * 0.55);
+        target.scale = ((px / c.height) * 2 * halfH) / 2.3; // geometry is ~2.3 tall with bevel
+      }
+      const opacity = scroller ? parseFloat(scroller.style.opacity || '1') : 1;
+      if (textReady) textAlpha = Math.min(1, textAlpha + dt / 0.6);
+
+      // 3. the D: ease toward the cursor, turn further with scroll
       const scroll = Math.min(1.5, sy / window.innerHeight);
-      const ease = 1 - Math.exp(-dt * 2.6);
-      const targetY = pointer.nx * 0.55 + Math.sin(time * 0.35) * 0.18 + scroll * 1.6;
-      const targetX = pointer.ny * 0.35 + Math.sin(time * 0.27 + 1) * 0.08 + scroll * 0.35;
+      const ease = 1 - Math.exp(-dt * 2.4);
+      const targetY = pointer.nx * 0.8 + Math.sin(time * 0.35) * 0.2 + scroll * 1.8;
+      const targetX = pointer.ny * 0.5 + Math.sin(time * 0.27 + 1) * 0.1 + scroll * 0.4;
       rot.y += (targetY - rot.y) * ease;
       rot.x += (targetX - rot.x) * ease;
-      glass.rotation.set(rot.x, rot.y - 0.25, Math.sin(time * 0.2) * 0.04);
-      glass.position.set(home.x, home.y + scroll * 0.9 + Math.sin(time * 0.6) * 0.04, home.z);
-      glass.scale.setScalar(baseScale * (1 - scroll * 0.15));
-      glass.updateMatrixWorld();
-      projected.setFromMatrixPosition(glass.matrixWorld).project(camera);
-      glowCenter.set(projected.x * 0.5 + 0.5, projected.y * 0.5 + 0.5);
+      glass.rotation.set(rot.x, rot.y, Math.sin(time * 0.2) * 0.05);
+      glass.position.set(target.x, target.y + Math.sin(time * 0.6) * 0.04, 0.4);
+      glass.scale.setScalar(target.scale * (1 - scroll * 0.15));
+      center.set((target.x / halfW) * 0.5 + 0.5, (target.y / halfH) * 0.5 + 0.5);
 
-      // 3. background → target, copy to screen, glass on top
+      // 4. background → target, copy to screen, glass on top
       bgMat.uniforms.uVel.value = vel[0].texture;
       bgMat.uniforms.uTime.value = time;
       bgMat.uniforms.uScroll.value = scroll;
+      bgMat.uniforms.uTextAlpha.value = textAlpha * opacity;
       run(bgMat, bgTarget);
       renderer.setRenderTarget(null);
       renderer.clear();
@@ -482,6 +607,8 @@ export default function GlassD({ paused = false, dpr = 1.25, interactive = true 
         firstFrame = false;
         canvas.dataset.ready = '';
       }
+      // Once the WebGL copy of the name is in, fade the HTML one (still in the DOM).
+      if (h1 && textReady && textAlpha > 0 && !('glText' in h1.dataset)) h1.dataset.glText = '';
       raf = requestAnimationFrame(frame);
     };
 
@@ -494,19 +621,23 @@ export default function GlassD({ paused = false, dpr = 1.25, interactive = true 
     if (!pausedRef.current) start();
 
     return () => {
+      disposed = true;
       startRef.current = null;
       cancelAnimationFrame(raf);
       resizeObserver.disconnect();
+      headingObserver.disconnect();
       window.removeEventListener('pointermove', onPointer);
+      if (h1) delete h1.dataset.glText;
       [...vel, ...pressure, divergence, bgTarget].forEach((t) => t.dispose());
       [advect, splat, divMat, pressureMat, gradMat, bgMat, copyMat, glassMat].forEach((m) => m.dispose());
+      textTexture.dispose();
       quadGeo.dispose();
       glassGeo.dispose();
       renderer.dispose();
       renderer.forceContextLoss();
       canvas.remove();
     };
-  }, [dpr, interactive]);
+  }, [dpr, interactive, textSelector]);
 
   return <div ref={containerRef} className="absolute inset-0" />;
 }

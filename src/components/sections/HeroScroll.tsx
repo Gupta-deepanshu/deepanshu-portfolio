@@ -1,10 +1,15 @@
 'use client';
 
-/** Hero scroll-out: the content block drifts up and fades as the hero leaves. */
+/**
+ * Hero scroll-out: the content block drifts up and fades as the hero leaves.
+ * `data-hero-content` lets the WebGL scene read the same opacity for its copy of
+ * the name.
+ */
 import { useRef, type ReactNode } from 'react';
 import { gsap, MEDIA, useGSAP } from '@/lib/gsap';
+import { cn } from '@/lib/cn';
 
-export function HeroScroll({ children }: { children: ReactNode }) {
+export function HeroScroll({ children, className }: { children: ReactNode; className?: string }) {
   const ref = useRef<HTMLDivElement>(null);
   useGSAP(
     () => {
@@ -22,7 +27,7 @@ export function HeroScroll({ children }: { children: ReactNode }) {
     { scope: ref },
   );
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} data-hero-content="" className={cn('relative', className)}>
       {children}
     </div>
   );

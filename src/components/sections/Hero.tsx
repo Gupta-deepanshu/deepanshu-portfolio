@@ -8,18 +8,19 @@ import { StaticD } from './StaticD';
  * keyframes from first paint (see .hero-char in globals.css): no hydration wait, so
  * the largest text paints immediately for LCP and recruiters see it at once.
  * GSAP only handles the scroll-out (HeroScroll).
+ *
+ * Layout: the name is centred and the glass D floats in front of it. On desktop
+ * with WebGL the scene copies the name into the canvas (so the glass can refract
+ * it) and the <h1> fades to opacity 0 but stays in the DOM; see GlassD.tsx.
  */
 export function Hero() {
   const words = site.name.split(' ');
   let i = 0;
   return (
-    <section id="top" aria-labelledby="hero-title" className="relative isolate flex min-h-svh flex-col justify-end pb-16 pt-32 sm:pb-20">
+    <section id="top" aria-labelledby="hero-title" className="relative isolate flex min-h-svh flex-col pb-12 pt-28 sm:pb-14">
       <WebGLBackground kind="glass" staticClassName="bg-hero-static" staticContent={<StaticD />} desktopOnly slotId="hero" />
-      <HeroScroll>
-        <div className="container-x">
-          <p className="eyebrow hero-fade mb-6" style={{ '--d': 0 } as React.CSSProperties}>
-            {site.role} · {site.location}
-          </p>
+      <HeroScroll className="flex flex-1 flex-col">
+        <div className="container-x flex flex-1 flex-col items-center justify-center text-center">
           <h1
             id="hero-title"
             aria-label={site.name}
@@ -37,25 +38,28 @@ export function Hero() {
               </span>
             ))}
           </h1>
-          <div className="mt-10 flex flex-col gap-8 sm:flex-row sm:items-end sm:justify-between">
-            <p className="hero-fade max-w-xl text-lg text-fg/90 sm:text-2xl" style={{ '--d': 150 } as React.CSSProperties}>
-              {site.intro}
+        </div>
+        <div className="container-x mt-10 flex flex-col gap-8 sm:flex-row sm:items-end sm:justify-between">
+          <div className="hero-fade max-w-xl" style={{ '--d': 150 } as React.CSSProperties}>
+            <p className="eyebrow mb-4">
+              {site.role} · {site.location}
             </p>
-            <div className="hero-fade flex items-center gap-6" style={{ '--d': 300 } as React.CSSProperties}>
-              <a
-                href="#projects"
-                className="group inline-flex items-center gap-2 rounded-full bg-fg px-5 py-3 text-sm font-medium text-bg transition-colors hover:bg-accent"
-              >
-                Skip to projects
-                <svg aria-hidden="true" viewBox="0 0 16 16" className="size-3.5 rotate-90 transition-transform group-hover:translate-y-0.5">
-                  <path d="M3 8h10M9 4l4 4-4 4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                </svg>
-              </a>
-              <a href="#about" className="hidden items-center gap-3 text-sm text-muted transition-colors hover:text-fg sm:inline-flex">
-                <span className="scroll-cue relative block h-10 w-px overflow-hidden bg-line" aria-hidden="true" />
-                Scroll
-              </a>
-            </div>
+            <p className="text-lg text-fg/90 sm:text-2xl">{site.intro}</p>
+          </div>
+          <div className="hero-fade flex items-center gap-6" style={{ '--d': 300 } as React.CSSProperties}>
+            <a
+              href="#projects"
+              className="group inline-flex items-center gap-2 rounded-full bg-fg px-5 py-3 text-sm font-medium text-bg transition-colors hover:bg-accent"
+            >
+              Skip to projects
+              <svg aria-hidden="true" viewBox="0 0 16 16" className="size-3.5 rotate-90 transition-transform group-hover:translate-y-0.5">
+                <path d="M3 8h10M9 4l4 4-4 4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              </svg>
+            </a>
+            <a href="#about" className="hidden items-center gap-3 text-sm text-muted transition-colors hover:text-fg sm:inline-flex">
+              <span className="scroll-cue relative block h-10 w-px overflow-hidden bg-line" aria-hidden="true" />
+              Scroll
+            </a>
           </div>
         </div>
       </HeroScroll>

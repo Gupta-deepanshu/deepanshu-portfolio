@@ -1,16 +1,16 @@
 /**
- * Static stand-in for the hero's glass D (mobile, reduced motion, no WebGL2, and
- * the moment before the WebGL scene fades in). Same outline as the 3D geometry in
- * GlassD.tsx: a stem plus a half-disc bowl with a matching counter, so the swap
- * reads as the same object. No animation, no JS.
+ * Static stand-in for the hero's glass D (phones, reduced motion, no WebGL2). Same
+ * outline as the 3D geometry in GlassD.tsx (stem + half-disc bowl with a matching
+ * counter), centred behind the name. No animation, no JS.
  */
 export function StaticD() {
+  const d = 'M-0.75 -1 L0 -1 A1 1 0 0 1 0 1 L-0.75 1 Z M-0.32 -0.56 L0 -0.56 A0.56 0.56 0 0 1 0 0.56 L-0.32 0.56 Z';
   return (
-    <>
+    <div className="static-d absolute inset-0">
       <div className="bg-room absolute inset-0" />
       <svg
         viewBox="-1.05 -1.25 2.3 2.5"
-        className="absolute left-1/2 top-[24%] w-[62vw] max-w-[460px] -translate-x-1/2 md:left-auto md:right-[12%] md:top-[26%] md:w-[34vw] md:translate-x-0"
+        className="absolute left-1/2 top-[47%] w-[58vw] max-w-[420px] -translate-x-1/2 -translate-y-1/2 md:w-[30vw]"
       >
         <defs>
           <linearGradient id="d-fill" x1="0" y1="-1" x2="0.4" y2="1" gradientUnits="userSpaceOnUse">
@@ -27,21 +27,9 @@ export function StaticD() {
             <feGaussianBlur stdDeviation="0.12" />
           </filter>
         </defs>
-        <path
-          d="M-0.75 -1 L0 -1 A1 1 0 0 1 0 1 L-0.75 1 Z M-0.32 -0.56 L0 -0.56 A0.56 0.56 0 0 1 0 0.56 L-0.32 0.56 Z"
-          fill="#5b3df5"
-          fillRule="evenodd"
-          opacity="0.35"
-          filter="url(#d-glow)"
-        />
-        <path
-          d="M-0.75 -1 L0 -1 A1 1 0 0 1 0 1 L-0.75 1 Z M-0.32 -0.56 L0 -0.56 A0.56 0.56 0 0 1 0 0.56 L-0.32 0.56 Z"
-          fill="url(#d-fill)"
-          fillRule="evenodd"
-          stroke="url(#d-edge)"
-          strokeWidth="0.018"
-        />
+        <path d={d} fill="#5b3df5" fillRule="evenodd" opacity="0.35" filter="url(#d-glow)" />
+        <path d={d} fill="url(#d-fill)" fillRule="evenodd" stroke="url(#d-edge)" strokeWidth="0.018" />
       </svg>
-    </>
+    </div>
   );
 }

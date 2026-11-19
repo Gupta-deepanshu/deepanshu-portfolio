@@ -13,13 +13,14 @@
  *   layer underneath simply remains visible.
  */
 import dynamic from 'next/dynamic';
-import { useRef, type ReactNode } from 'react';
+import { useRef, useSyncExternalStore, type ReactNode } from 'react';
 import { useWebGLSlot } from '@/lib/gl-budget';
 import { useFinePointer, useIsDesktop, useReducedMotion, useWebGL2 } from '@/lib/media-query';
 import { cn } from '@/lib/cn';
 
 const GlassD = dynamic(() => import('@/components/three/GlassD'), { ssr: false });
 const LiquidEther = dynamic(() => import('@/components/reactbits/LiquidEther'), { ssr: false });
+const noop = () => () => {};
 
 interface Props {
   kind: 'glass' | 'ether';
@@ -38,13 +39,18 @@ export function WebGLBackground({ kind, staticClassName, staticContent, desktopO
   const fine = useFinePointer();
   const webgl = useWebGL2();
   const enabled = webgl && !reduce && (!desktopOnly || desktop);
+  const hydrated = useSyncExternalStore(noop, () => true, () => false);
   const slot = useWebGLSlot(ref, enabled);
   const paused = slot !== 'active';
   const dpr = desktop ? 1.25 : 0.75;
 
   return (
     <div ref={ref} data-bg="" data-gl-slot={slotId} data-gl-state={slot} aria-hidden="true" className="section-bg">
-      <div className={cn('absolute inset-0', staticClassName)} data-animate={!reduce && !enabled ? '' : undefined}>
+      <div
+        className={cn('absolute inset-0', staticClassName)}
+        data-animate={!reduce && !enabled ? '' : undefined}
+        data-static-only={hydrated && !enabled ? '' : undefined}
+      >
         {staticContent}
       </div>
       {enabled &&
