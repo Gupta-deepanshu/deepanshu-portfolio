@@ -20,20 +20,26 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 import {
   Color,
+  DataTexture,
+  Euler,
   LinearFilter,
   Mesh,
   OrthographicCamera,
   PerspectiveCamera,
   PlaneGeometry,
+  Quaternion,
   Scene,
   ShaderMaterial,
   Texture,
   TextureLoader,
   Vector2,
+  Vector3,
   VideoTexture,
   WebGLRenderer,
+  WebGLRenderTarget,
 } from 'three';
 import { QUAD_VERT, ROOM_CHUNK } from './room';
+import { createD, GLASS_FRAG, GLASS_VERT } from './glass';
 
 export interface ReelItem {
   image: string;
@@ -77,6 +83,10 @@ void main() {
   col *= 1.0 - dot(v, v) * 1.1;
   gl_FragColor = vec4(col, clamp(max(col.r, max(col.g, col.b)) * 1.5, 0.0, 1.0));
 }`;
+
+const COPY = /* glsl */ `
+uniform sampler2D uTex; varying vec2 vUv;
+void main() { gl_FragColor = texture2D(uTex, vUv); }`;
 
 const CARD_VERT = /* glsl */ `
 uniform float uAngle; uniform float uRadius; uniform vec2 uSize; uniform float uFocus;
@@ -197,6 +207,44 @@ const CurvedReel = forwardRef<CurvedReelHandle, Props>(function CurvedReel(
     const roomScene = new Scene().add(roomQuad);
     const quadCam = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
 
+    /* the glass D behind the reel (alche's A in works): room + posters are drawn to
+       bgTarget first, so the glass refracts them; the posters are drawn again on top */
+    const bgTarget = new WebGLRenderTarget(1, 1, { minFilter: LinearFilter, magFilter: LinearFilter, depthBuffer: false });
+    const copyMat = new ShaderMaterial({
+      vertexShader: QUAD_VERT,
+      fragmentShader: COPY,
+      depthTest: false,
+      depthWrite: false,
+      uniforms: { uTex: { value: bgTarget.texture } },
+    });
+    const copyQuad = new Mesh(quadGeo, copyMat);
+    copyQuad.frustumCulled = false;
+    const copyScene = new Scene().add(copyQuad);
+    const noFluid = new DataTexture(new Uint8Array(4), 1, 1);
+    noFluid.needsUpdate = true;
+    const glassCenter = new Vector2(0.5, 0.5);
+    const glassGeo = createD();
+    const glassMat = new ShaderMaterial({
+      vertexShader: GLASS_VERT,
+      fragmentShader: GLASS_FRAG,
+      transparent: true,
+      premultipliedAlpha: true,
+      uniforms: {
+        uBg: { value: bgTarget.texture },
+        uVel: { value: noFluid },
+        uRes: { value: res },
+        uCenter: { value: glassCenter },
+        uTime: { value: 0 },
+        uAlpha: { value: 0 },
+      },
+    });
+    const glass = new Mesh(glassGeo, glassMat);
+    const glassScene = new Scene().add(glass);
+    const glassEuler = new Euler();
+    const glassQuat = new Quaternion();
+    const projected = new Vector3();
+    let glassAlpha = 0;
+
     /* cards */
     const scene = new Scene();
     const camera = new PerspectiveCamera(FOV, 1, 0.1, 50);
@@ -290,6 +338,7 @@ const CurvedReel = forwardRef<CurvedReelHandle, Props>(function CurvedReel(
       const h = Math.max(1, container.clientHeight);
       renderer.setSize(w, h, false);
       renderer.getDrawingBufferSize(res);
+      bgTarget.setSize(res.x, res.y);
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
       const tanV = Math.tan((FOV * Math.PI) / 360);
@@ -301,6 +350,11 @@ const CurvedReel = forwardRef<CurvedReelHandle, Props>(function CurvedReel(
       size.set(cw, cw / cardAspect);
       step = cw / RADIUS + 0.12;
       cards.forEach((c) => (c.material.uniforms.uCardAspect.value = cardAspect));
+      // The D sits further back than the wall the cards hang on and stands ~1.3x as tall
+      // as the focused card on screen, so it peeks out above, below and between cards.
+      const depth = RADIUS * 1.5;
+      glass.position.set(0, 0.32 * 1.5, -depth);
+      glass.scale.setScalar((1.3 * size.y * depth) / (RADIUS * 2.3));
     };
     resize();
     const ro = new ResizeObserver(resize);
@@ -364,9 +418,31 @@ const CurvedReel = forwardRef<CurvedReelHandle, Props>(function CurvedReel(
       roomMat.uniforms.uTurn.value = -shown * step * 6.5;
       roomMat.uniforms.uTime.value = time;
 
-      renderer.setRenderTarget(null);
+      // The D turns as you move through the projects, drifts on its own, leans with the
+      // cursor and tips with scroll speed.
+      glassEuler.set(
+        Math.sin(time * 0.3) * 0.15 + look.y * 0.25 + vNorm * 0.35,
+        shown * 1.1 + time * 0.15 + look.x * 0.4,
+        Math.sin(time * 0.2) * 0.06,
+      );
+      glass.quaternion.slerp(glassQuat.setFromEuler(glassEuler), 1 - Math.exp(-dt * 4));
+      glass.updateMatrixWorld();
+      projected.setFromMatrixPosition(glass.matrixWorld).project(camera);
+      glassCenter.set(projected.x * 0.5 + 0.5, projected.y * 0.5 + 0.5);
+      glassAlpha = Math.min(1, glassAlpha + dt / 1.2);
+      glassMat.uniforms.uAlpha.value = glassAlpha;
+      glassMat.uniforms.uTime.value = time;
+
+      // room + posters → bgTarget; copy; glass (refracting it); posters again on top
+      renderer.setRenderTarget(bgTarget);
       renderer.clear();
       renderer.render(roomScene, quadCam);
+      renderer.render(scene, camera);
+      renderer.setRenderTarget(null);
+      renderer.clear();
+      renderer.render(copyScene, quadCam);
+      renderer.clearDepth();
+      renderer.render(glassScene, camera);
       renderer.render(scene, camera);
 
       if (first) {
@@ -397,6 +473,11 @@ const CurvedReel = forwardRef<CurvedReelHandle, Props>(function CurvedReel(
         c.material.dispose();
       });
       cardGeo.dispose();
+      glassGeo.dispose();
+      glassMat.dispose();
+      copyMat.dispose();
+      bgTarget.dispose();
+      noFluid.dispose();
       quadGeo.dispose();
       roomMat.dispose();
       renderer.dispose();

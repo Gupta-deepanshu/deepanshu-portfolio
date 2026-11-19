@@ -10,9 +10,8 @@
  * 2. The outline D rides in on that panel exactly where the glass D sat in About
  *    (same place, same size), drawing itself as it comes — the glass "becomes" a line
  *    drawing. Once the panel covers the screen it grows into a large centred outline
- *    and stays put (sticky) behind Experience; as Projects arrives it opens up to frame
- *    the whole projects reel (the reel's
- *    canvas is transparent so it shows between the cards).
+ *    and stays put (sticky) behind Experience; as Projects arrives it opens up and
+ *    fades, handing over to the glass D that floats behind the reel's cards.
  * 3. The last 45vh of the stage is masked, so it dissolves into Skills.
  *
  * Reduced motion: no scroll animation; the outline is static, large and centred.
@@ -69,9 +68,11 @@ export function OutlineStage({ children }: { children: ReactNode }) {
             scrollTrigger: { trigger: root, start: 'top top', end: () => `+=${window.innerHeight * 0.9}`, scrub: true, invalidateOnRefresh: true },
           },
         );
-        // Projects: it opens up to frame the reel, stem and bowl peeking out either side.
+        // Projects: it opens up and fades as the reel's glass D (alche's A between the
+        // cards) takes over, so the line drawing seems to turn back into glass.
         gsap.to(d, {
           scale: 1.6,
+          opacity: 0,
           ease: 'none',
           immediateRender: false,
           scrollTrigger: { trigger: root.querySelector('#projects'), start: 'top bottom', end: 'top top', scrub: true },

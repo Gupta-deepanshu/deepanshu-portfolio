@@ -69,7 +69,7 @@ The name is split into letters on the server and animated with CSS keyframes fro
 | Hero | Glass D scene (three.js, desktop): fluid sim + curved grid room + refractive D; static SVG D elsewhere |
 | About | The hero's room stays (sticky stage shared with the hero): the D moves to the left column, the camera turns, the glow cools; fades out into Experience |
 | Experience | Black panel slides up over the still About room (alche works→about); an outline D draws itself where the glass D was, then grows and stays behind the timeline; faint "+" crosshair grid |
-| Projects | Same outline D, opened up to frame the reel (reel canvas is transparent); faint star vignette |
+| Projects | The outline D opens up and fades as the reel's glass D takes over: the same glass D (shared `three/glass.ts`) floats behind the cards, refracting the room and posters (drawn to a texture first, posters re-drawn on top), turning with the reel; faint star vignette |
 | Skills | CSS dot grid lit by the cursor |
 | Contact | React Bits **Liquid Ether** (WebGL2, desktop only) |
 
