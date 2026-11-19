@@ -63,3 +63,20 @@ test('mobile shows the swipe carousel, not the pinned gallery', async ({ page })
   await expect(page.locator('[data-gl-slot="projects"]')).toHaveCount(0);
   await expect(page.locator('#projects li[data-index]')).toHaveCount(6);
 });
+
+for (const width of [1440, 375]) {
+  test(`outline D is gone behind Skills and Contact @ ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: width > 400 ? 900 : 812 });
+    await page.goto('/');
+    await page.waitForTimeout(1500); // desktop: pinned reel mounts and refreshes triggers
+    const outline = page.locator('[data-outline-d]');
+    for (const id of ['experience', 'skills', 'contact']) {
+      const top = await page.locator(`#${id}`).evaluate((el) => el.getBoundingClientRect().top + window.scrollY);
+      await scrollToY(page, top + (id === 'experience' ? 400 : 0));
+      await page.waitForTimeout(600);
+      const opacity = await outline.evaluate((el) => Number(getComputedStyle(el).opacity));
+      if (id === 'experience') expect(opacity, 'outline D shows behind Experience').toBeGreaterThan(0.5);
+      else expect(opacity, `outline D hidden behind ${id}`).toBe(0);
+    }
+  });
+}

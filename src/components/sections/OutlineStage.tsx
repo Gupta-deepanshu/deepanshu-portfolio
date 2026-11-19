@@ -48,7 +48,6 @@ export function OutlineStage({ children }: { children: ReactNode }) {
     () => {
       const root = ref.current;
       const d = root?.querySelector<SVGSVGElement>('[data-outline-d]');
-      const stage = root?.querySelector<HTMLElement>('[data-gl-slot="projects"]') ?? null;
       if (!root || !d) return;
       const mm = gsap.matchMedia();
       mm.add(MEDIA.motion, () => {
@@ -87,34 +86,42 @@ export function OutlineStage({ children }: { children: ReactNode }) {
           },
         );
 
-        if (stage) {
-          // 2a. As Projects arrives, settle onto the reel D's frame, offset by the 25vh
-          //     the stage still has to travel before it pins.
-          gsap.fromTo(
-            d,
-            { y: 0, scale: 1 },
-            {
-              y: () => reel().y + vh() * 0.25,
-              scale: reelScale,
-              ease: 'power1.inOut',
-              immediateRender: false,
-              scrollTrigger: { trigger: stage, start: 'top bottom', end: 'top 25%', scrub: true, invalidateOnRefresh: true },
-            },
-          );
-          // 2b. Ride up with the stage (linear, like the scroll) while cross-fading into
-          //     the glass D; PinnedGallery fades the glass in over this same range.
-          gsap.fromTo(
-            d,
-            { y: () => reel().y + vh() * 0.25, opacity: 1 },
-            {
-              y: () => reel().y,
-              opacity: 0,
-              ease: 'none',
-              immediateRender: false,
-              scrollTrigger: { trigger: stage, start: 'top 25%', end: 'top top', scrub: true, invalidateOnRefresh: true },
-            },
-          );
-        }
+        // The reel stage only exists after hydration on desktop (ProjectsShowcase swaps the
+        // HTML carousel for it), so it is looked up on every refresh (PinnedGallery
+        // refreshes once it mounts). Without it (phones, no WebGL) the Projects section
+        // stands in, so the outline is always gone before Skills.
+        const stageTop = () => {
+          const el = root.querySelector<HTMLElement>('[data-gl-slot="projects"]') ?? root.querySelector<HTMLElement>('#projects');
+          return el ? el.getBoundingClientRect().top + window.scrollY : root.offsetTop + root.offsetHeight;
+        };
+
+        // 2a. As Projects arrives, settle onto the reel D's frame, offset by the 25vh
+        //     the stage still has to travel before it pins.
+        gsap.fromTo(
+          d,
+          { y: 0, scale: 1 },
+          {
+            y: () => reel().y + vh() * 0.25,
+            scale: reelScale,
+            ease: 'power1.inOut',
+            immediateRender: false,
+            scrollTrigger: { start: () => stageTop() - vh(), end: () => stageTop() - vh() * 0.25, scrub: true, invalidateOnRefresh: true },
+          },
+        );
+        // 2b. Ride up with the stage (linear, like the scroll) while cross-fading into the
+        //     glass D; PinnedGallery fades the glass in over this same range. After this
+        //     the outline stays at opacity 0: no D behind Skills or Contact.
+        gsap.fromTo(
+          d,
+          { y: () => reel().y + vh() * 0.25, opacity: 1 },
+          {
+            y: () => reel().y,
+            opacity: 0,
+            ease: 'none',
+            immediateRender: false,
+            scrollTrigger: { start: () => stageTop() - vh() * 0.25, end: () => stageTop(), scrub: true, invalidateOnRefresh: true },
+          },
+        );
       });
       return () => mm.revert();
     },
