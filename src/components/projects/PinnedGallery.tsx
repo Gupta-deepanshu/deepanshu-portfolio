@@ -42,6 +42,7 @@ export function PinnedGallery({ onFail }: { onFail: () => void }) {
   const galleryRef = useRef<CurvedReelHandle | null>(null);
   const triggerRef = useRef<ScrollTrigger | null>(null);
   const progressRef = useRef(0);
+  const glassRef = useRef(0);
   const [active, setActive] = useState(0);
   const slot = useWebGLSlot(stageRef);
 
@@ -68,9 +69,25 @@ export function PinnedGallery({ onFail }: { onFail: () => void }) {
         // Refresh it first, then re-measure everything in page order.
         refreshPriority: 1,
       });
+      // Glass D hand-off: over the stage's last 25vh before it pins, the reel's glass D
+      // fades in exactly where the outline D (OutlineStage) is fading out.
+      const glassTrigger = ScrollTrigger.create({
+        trigger: stage,
+        start: 'top 25%',
+        end: 'top top',
+        onUpdate: (self) => {
+          glassRef.current = self.progress;
+          galleryRef.current?.setGlassAlpha(self.progress);
+        },
+        onRefresh: (self) => {
+          glassRef.current = self.progress;
+          galleryRef.current?.setGlassAlpha(self.progress);
+        },
+      });
       ScrollTrigger.sort();
       ScrollTrigger.refresh();
       return () => {
+        glassTrigger.kill();
         triggerRef.current?.kill();
         triggerRef.current = null;
         // Spacer gone (list view / mobile): re-measure the sections below.
@@ -84,6 +101,7 @@ export function PinnedGallery({ onFail }: { onFail: () => void }) {
   const attachGallery = useCallback((handle: CurvedReelHandle | null) => {
     galleryRef.current = handle;
     handle?.setProgress(progressRef.current);
+    handle?.setGlassAlpha(glassRef.current);
   }, []);
 
   const go = useCallback((index: number) => {

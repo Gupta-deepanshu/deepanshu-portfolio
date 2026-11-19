@@ -40,6 +40,7 @@ import {
 } from 'three';
 import { QUAD_VERT, ROOM_CHUNK } from './room';
 import { createD, GLASS_FRAG, GLASS_VERT } from './glass';
+import { CARD_LIFT, cardSize, FOV, glassPlacement, RADIUS, TILT } from './reel-layout';
 
 export interface ReelItem {
   image: string;
@@ -51,6 +52,8 @@ export interface ReelItem {
 export interface CurvedReelHandle {
   /** 0 = first item centred, 1 = last item centred. */
   setProgress: (progress: number) => void;
+  /** 0..1: how much of the glass D shows (scroll-driven hand-off from the outline D). */
+  setGlassAlpha: (alpha: number) => void;
 }
 
 interface Props {
@@ -173,22 +176,22 @@ void main() {
 
 /* ------------------------------------------------------------- component */
 
-const RADIUS = 5;
-const FOV = 38;
-/** Ring tilt around the view axis (rad), ~11.5°; negative = next card lower right. */
-const TILT = -0.2;
-
 const CurvedReel = forwardRef<CurvedReelHandle, Props>(function CurvedReel(
   { items, activeIndex, paused = false, dpr = 1.5, onError },
   ref,
 ) {
   const containerRef = useRef<HTMLDivElement>(null);
   const target = useRef(0);
+  const glassTarget = useRef(0);
   const live = useRef({ paused, activeIndex, onError, start: null as null | (() => void), syncVideo: null as null | (() => void) });
 
   useImperativeHandle(ref, () => ({
     setProgress: (p) => {
       target.current = Math.min(1, Math.max(0, p));
+      live.current.start?.();
+    },
+    setGlassAlpha: (a) => {
+      glassTarget.current = Math.min(1, Math.max(0, a));
       live.current.start?.();
     },
   }));
@@ -310,7 +313,7 @@ const CurvedReel = forwardRef<CurvedReelHandle, Props>(function CurvedReel(
           uAngle: { value: 0 },
           uRadius: { value: RADIUS },
           uSize: { value: size },
-          uLift: { value: 0.32 },
+          uLift: { value: CARD_LIFT },
           uTilt: { value: TILT },
           uOffset: { value: 0 },
           uTime: { value: 0 },
@@ -382,20 +385,15 @@ const CurvedReel = forwardRef<CurvedReelHandle, Props>(function CurvedReel(
       bgTarget.setSize(res.x, res.y);
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
-      const tanV = Math.tan((FOV * Math.PI) / 360);
-      const tanH = tanV * camera.aspect;
-      const cardAspect = 1.6;
-      let cw = 2 * RADIUS * Math.atan(0.55 * tanH);
-      const maxH = 2 * RADIUS * 0.52 * tanV;
-      if (cw / cardAspect > maxH) cw = maxH * cardAspect;
-      size.set(cw, cw / cardAspect);
-      step = cw / RADIUS + 0.12;
-      cards.forEach((c) => (c.material.uniforms.uCardAspect.value = cardAspect));
+      const card = cardSize(camera.aspect);
+      size.set(card.w, card.h);
+      step = card.w / RADIUS + 0.12;
+      cards.forEach((c) => (c.material.uniforms.uCardAspect.value = card.aspect));
       // The D sits further back than the wall the cards hang on and stands ~1.3x as tall
       // as the focused card on screen, so it peeks out above, below and between cards.
-      const depth = RADIUS * 1.5;
-      glass.position.set(0, 0.32 * 1.5, -depth);
-      glass.scale.setScalar((1.3 * size.y * depth) / (RADIUS * 2.3));
+      const g = glassPlacement(camera.aspect);
+      glass.position.set(0, g.y, g.z);
+      glass.scale.setScalar(g.scale);
     };
     resize();
     const ro = new ResizeObserver(resize);
@@ -461,18 +459,20 @@ const CurvedReel = forwardRef<CurvedReelHandle, Props>(function CurvedReel(
       roomMat.uniforms.uTurn.value = -shown * step * 6.5;
       roomMat.uniforms.uTime.value = time;
 
-      // The D turns as you move through the projects, drifts on its own, leans with the
-      // cursor and tips with scroll speed.
+      // Glass alpha follows the scroll-driven hand-off (eased a touch). While it fades in
+      // the D faces front, so it lines up with the flat outline it replaces; once in, it
+      // turns with the projects, drifts, leans with the cursor and tips with scroll speed.
+      glassAlpha += (glassTarget.current - glassAlpha) * (1 - Math.exp(-dt * 12));
+      const free = glassAlpha * glassAlpha;
       glassEuler.set(
-        Math.sin(time * 0.3) * 0.15 + look.y * 0.25 + vNorm * 0.35,
-        shown * 1.1 + time * 0.15 + look.x * 0.4,
-        Math.sin(time * 0.2) * 0.06,
+        (Math.sin(time * 0.3) * 0.15 + look.y * 0.25) * free + vNorm * 0.35,
+        shown * 1.1 + (Math.sin(time * 0.15) * 0.35 + look.x * 0.4) * free,
+        Math.sin(time * 0.2) * 0.06 * free,
       );
       glass.quaternion.slerp(glassQuat.setFromEuler(glassEuler), 1 - Math.exp(-dt * 4));
       glass.updateMatrixWorld();
       projected.setFromMatrixPosition(glass.matrixWorld).project(camera);
       glassCenter.set(projected.x * 0.5 + 0.5, projected.y * 0.5 + 0.5);
-      glassAlpha = Math.min(1, glassAlpha + dt / 1.2);
       glassMat.uniforms.uAlpha.value = glassAlpha;
       glassMat.uniforms.uTime.value = time;
 

@@ -449,3 +449,19 @@ html[data-intro='skip'] .hero-fade {
   background-position: center;
   mask-image: radial-gradient(ellipse 75% 70% at var(--g1x) var(--g1y), #000 10%, transparent 78%);
 }
+
+/* Outline D (OutlineStage): with motion it is a fixed layer that GSAP reveals only
+   during its hand-offs, so keep it hidden until then (no flash before hydration).
+   Reduced motion: a static drawing at the top of Experience instead of a fixed layer. */
+@media (prefers-reduced-motion: no-preference) {
+  [data-outline-d] {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-outline-layer] {
+    position: absolute;
+    bottom: auto;
+    height: 100svh;
+  }
+}

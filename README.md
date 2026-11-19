@@ -70,8 +70,8 @@ One fixed **ambient background** (`AmbientBackground.tsx`, CSS only) sits behind
 |---|---|
 | Hero | Glass D scene (three.js, desktop): fluid sim + curved grid room + refractive D; static SVG D elsewhere |
 | About | The hero's room stays (sticky stage shared with the hero): the D moves to the left column, the camera turns, the glow cools; fades out into Experience |
-| Experience | The About room dissolves into the ambient background while an outline D draws itself where the glass D was, then grows and stays behind the timeline; faint "+" crosshair grid |
-| Projects | The outline D opens up and fades as the reel's glass D takes over: the same glass D (shared `three/glass.ts`) floats behind the cards, refracting the room and posters (drawn to a texture first, posters re-drawn on top), turning with the reel; faint star vignette |
+| Experience | The About room (with the glass D) dissolves into the ambient background; the outline D (a fixed layer) traces itself in the glass D's exact spot and size, overlapping only briefly, then glides to the centre behind the timeline; faint "+" crosshair grid |
+| Projects | The outline D moves onto the reel glass D's exact screen frame (shared maths in `three/reel-layout.ts`), rides up with the stage over its last 25vh before the pin and cross-fades into the glass D (scroll-driven alpha, facing front) — only one D is ever visible: the same glass D (shared `three/glass.ts`) floats behind the cards, refracting the room and posters (drawn to a texture first, posters re-drawn on top), turning with the reel; faint star vignette |
 | Skills | CSS dot grid lit by the cursor |
 | Contact | React Bits **Liquid Ether** (WebGL2, desktop only) |
 
