@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Archivo, Geist, Geist_Mono, Instrument_Serif } from 'next/font/google';
+import { Archivo, Geist, Geist_Mono } from 'next/font/google';
 import { site } from '@/content/site';
 import { SmoothScroll } from '@/components/providers/SmoothScroll';
 import { PageTransitionProvider } from '@/components/providers/PageTransition';
@@ -10,13 +10,6 @@ import './globals.css';
 
 const geist = Geist({ variable: '--font-geist', subsets: ['latin'], display: 'swap' });
 const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin'], display: 'swap' });
-const instrument = Instrument_Serif({
-  variable: '--font-instrument',
-  subsets: ['latin'],
-  weight: '400',
-  style: ['normal', 'italic'],
-  display: 'swap',
-});
 // Wide display face for the name and logo: Archivo's width axis at 125% is the closest
 // free match to Acumin Pro Wide, the (Adobe-licensed) wide face alche.studio uses.
 const archivo = Archivo({ variable: '--font-archivo', subsets: ['latin'], axes: ['wdth'], display: 'swap' });
@@ -56,7 +49,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
   return (
     <html
       lang="en"
-      className={`${geist.variable} ${geistMono.variable} ${instrument.variable} ${archivo.variable} dark antialiased`}
+      className={`${geist.variable} ${geistMono.variable} ${archivo.variable} dark antialiased`}
       suppressHydrationWarning
     >
       <head>

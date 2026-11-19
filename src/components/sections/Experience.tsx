@@ -32,7 +32,7 @@ export function Experience() {
           <h2
             id="experience-title"
             data-split="heading"
-            className="font-display text-[clamp(2.6rem,6vw,5.5rem)] leading-[0.95] tracking-[-0.02em] lg:col-span-9"
+            className="font-display font-semibold uppercase text-[clamp(2rem,4.2vw,4rem)] leading-none lg:col-span-9"
           >
             Five years of shipping interfaces for products at scale.
           </h2>
@@ -52,7 +52,7 @@ export function Experience() {
                   <p className="font-mono text-sm text-accent">
                     <time>{role.start}</time> – <time>{role.end}</time>
                   </p>
-                  <h3 className="mt-2 font-display text-4xl">{role.company}</h3>
+                  <h3 className="mt-2 font-display font-semibold uppercase text-2xl sm:text-3xl">{role.company}</h3>
                   <p className="text-sm text-muted">{role.location}</p>
                 </div>
               </div>

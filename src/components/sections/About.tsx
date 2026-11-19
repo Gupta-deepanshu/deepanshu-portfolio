@@ -20,7 +20,7 @@ export function About() {
           <h2 id="about-title" className="sr-only">
             About me
           </h2>
-          <div className="space-y-8 font-display text-[clamp(1.8rem,3.6vw,3.4rem)] leading-[1.15] tracking-[-0.01em]">
+          <div className="space-y-8 font-display text-[clamp(1.35rem,2.5vw,2.4rem)] leading-[1.25]">
             {site.summary.map((paragraph) => (
               <p key={paragraph} data-scrub-lines="">
                 {paragraph}
@@ -31,7 +31,7 @@ export function About() {
             {site.facts.map((fact) => (
               <div key={fact.label} data-reveal="">
                 <dt className="sr-only">{fact.label}</dt>
-                <dd className="font-display text-5xl text-fg sm:text-6xl">
+                <dd className="font-display font-semibold text-4xl text-fg sm:text-5xl">
                   {fact.value}
                   <span aria-hidden="true" className="mt-2 block font-sans text-sm text-muted">{fact.label}</span>
                 </dd>

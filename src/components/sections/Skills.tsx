@@ -23,7 +23,7 @@ export function Skills() {
               {[0, 1].map((copy) => (
                 <div key={copy} data-dup={copy === 1 ? '' : undefined} className="flex shrink-0 items-center">
                   {row.map((s) => (
-                    <span key={s} className="flex items-center whitespace-nowrap px-6 font-display text-[clamp(2.4rem,6vw,5rem)] text-fg/80">
+                    <span key={s} className="flex items-center whitespace-nowrap px-6 font-display font-semibold uppercase text-[clamp(1.8rem,4.5vw,3.8rem)] text-fg/80">
                       {s}
                       <span className="ml-12 size-2 rounded-full bg-accent/70" />
                     </span>
@@ -40,7 +40,7 @@ export function Skills() {
           <p className="eyebrow" data-reveal="">
             04 / Skills
           </p>
-          <h2 id="skills-title" data-split="heading" className="mt-4 font-display text-4xl">
+          <h2 id="skills-title" data-split="heading" className="mt-4 font-display font-semibold uppercase text-3xl">
             Toolkit
           </h2>
         </div>

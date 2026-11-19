@@ -30,7 +30,7 @@
   --color-accent: var(--accent);
   --font-sans: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
-  --font-display: var(--font-instrument), 'Times New Roman', serif;
+  --font-display: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
   --font-wide: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
   --ease-out-soft: var(--ease-out);
 }
@@ -117,8 +117,11 @@ html[data-intro='skip'] .loader {
 }
 .loader-name {
   font-family: var(--font-display);
-  font-size: clamp(2rem, 6vw, 4rem);
-  letter-spacing: -0.02em;
+  font-stretch: 125%;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: clamp(1.6rem, 4.5vw, 3rem);
+  letter-spacing: -0.01em;
   clip-path: inset(0 100% 0 0);
   animation: loader-wipe 0.6s var(--ease-out) 0.05s forwards;
 }
@@ -412,4 +415,12 @@ html[data-intro='skip'] .hero-fade {
   [data-stage-sticky] {
     position: relative;
   }
+}
+
+/* The display face is Archivo at its 125% width everywhere it's used (the same
+   wide face as the hero name). Weight/case are set per use: semibold uppercase
+   for titles, regular sentence case for large reading text. */
+.font-display {
+  font-stretch: 125%;
+  letter-spacing: -0.01em;
 }

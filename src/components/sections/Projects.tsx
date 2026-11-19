@@ -10,7 +10,7 @@ export function Projects() {
           03 / Selected work
         </p>
         <div className="lg:col-span-9">
-          <h2 id="projects-title" data-split="heading" className="font-display text-[clamp(2.6rem,6vw,5.5rem)] leading-[0.95] tracking-[-0.02em]">
+          <h2 id="projects-title" data-split="heading" className="font-display font-semibold uppercase text-[clamp(2rem,4.2vw,4rem)] leading-none">
             Things I’ve built on my own time.
           </h2>
           <p className="mt-6 max-w-xl text-muted" data-reveal="">

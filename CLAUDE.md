@@ -42,7 +42,7 @@ Loader (<1 s, skippable, skipped for returning visitors & reduced motion) → He
 - Reduced motion / no WebGL: static gradient per section. Never reduce text contrast — scrim behind text.
 
 ## Design direction
-Near-black bg, off-white text, one restrained accent, subtle film grain, generous spacing, large display type + clean body (next/font). Motion smooth and weighty, not bouncy. One standout effect per section. Optional custom cursor only for `(pointer: fine)`.
+Near-black bg, off-white text, one restrained accent, subtle film grain, generous spacing, large wide display type (Archivo at 125% width: semibold uppercase titles, regular for large reading text) + clean body (Geist), all via next/font. Motion smooth and weighty, not bouncy. One standout effect per section. Optional custom cursor only for `(pointer: fine)`.
 
 ## Non-negotiables
 - Mobile: no pinned ring; test at 375 px.

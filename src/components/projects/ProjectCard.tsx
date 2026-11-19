@@ -74,7 +74,7 @@ export function ProjectCard({ project, index, total, active = false, className, 
           </span>
           {project.category === 'earlier' && <EarlierLabel />}
         </div>
-        <h3 className="font-display text-3xl leading-tight">
+        <h3 className="font-display font-semibold uppercase text-2xl leading-tight">
           <TransitionLink href={`/projects/${project.slug}`} className="after:absolute after:inset-0">
             {project.title}
           </TransitionLink>

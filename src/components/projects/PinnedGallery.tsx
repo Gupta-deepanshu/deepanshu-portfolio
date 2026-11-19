@@ -154,7 +154,7 @@ export function PinnedGallery({ onFail }: { onFail: () => void }) {
                     ))}
                   </ul>
                 </div>
-                <h3 className="font-display text-[clamp(2.4rem,5vw,4.5rem)] leading-none">
+                <h3 className="font-display font-semibold uppercase text-[clamp(1.8rem,3.6vw,3.4rem)] leading-none">
                   <DecryptedText text={project.title} animateOn="view" speed={35} maxIterations={8} sequential />
                 </h3>
                 <p className="mt-3 max-w-xl text-lg text-fg/85">{project.oneLiner}</p>

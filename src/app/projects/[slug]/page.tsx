@@ -57,7 +57,7 @@ export default async function ProjectPage({ params }: PageProps<'/projects/[slug
               </span>
               {project.category === 'earlier' ? <EarlierLabel /> : <span className="uppercase tracking-widest">Case study</span>}
             </div>
-            <h1 id="project-title" className="mt-4 font-display text-[clamp(3.2rem,11vw,10rem)] leading-[0.9] tracking-[-0.03em]">
+            <h1 id="project-title" className="mt-4 font-display font-semibold uppercase text-[clamp(2.4rem,8vw,7rem)] leading-[0.92]">
               {project.title}
             </h1>
             <p className="mt-6 max-w-2xl text-xl text-fg/85 sm:text-2xl">{project.oneLiner}</p>
@@ -91,7 +91,7 @@ export default async function ProjectPage({ params }: PageProps<'/projects/[slug
           <TransitionLink href={`/projects/${next.slug}`} className="group container-x flex items-end justify-between gap-6 py-20">
             <span>
               <span className="eyebrow block">Next project</span>
-              <span className="mt-3 block font-display text-[clamp(2.4rem,7vw,6rem)] leading-none transition-colors group-hover:text-accent">
+              <span className="mt-3 block font-display font-semibold uppercase text-[clamp(1.8rem,5vw,4.2rem)] leading-none transition-colors group-hover:text-accent">
                 {next.title}
               </span>
             </span>
@@ -144,7 +144,7 @@ function CaseStudy({ project }: { project: FeaturedProject }) {
   return (
     <>
       <Block title="Overview" n="01">
-        <p className="max-w-3xl font-display text-[clamp(1.6rem,3vw,2.4rem)] leading-snug text-fg">{c.overview}</p>
+        <p className="max-w-3xl font-display text-[clamp(1.25rem,2.2vw,1.9rem)] leading-snug text-fg">{c.overview}</p>
       </Block>
       <Block title="My role" n="02">
         <p className="max-w-3xl">{c.role}</p>
@@ -189,7 +189,7 @@ function ShortStudy({ project }: { project: EarlierProject }) {
   return (
     <>
       <Block title="Overview" n="01">
-        <p className="max-w-3xl font-display text-[clamp(1.6rem,3vw,2.4rem)] leading-snug text-fg">{project.short.overview}</p>
+        <p className="max-w-3xl font-display text-[clamp(1.25rem,2.2vw,1.9rem)] leading-snug text-fg">{project.short.overview}</p>
       </Block>
       <Block title="What I built" n="02">
         <ul className="space-y-3">
