@@ -92,9 +92,10 @@ export function SkillDeck() {
             rot += (1 - e) * (6 - order);
             op *= e;
             c.style.transform = `translate3d(${x}px, ${y}px, ${z}px) rotate(${rot}deg) skewY(${SKEW}deg)`;
+            // Opacity only, never visibility/display: faded cards must stay in the
+            // accessibility tree so every group is readable regardless of deck position.
             c.style.opacity = String(op);
             c.style.zIndex = String(100 - Math.round(s * 10));
-            c.style.visibility = op < 0.01 ? 'hidden' : 'visible';
           });
         };
 
