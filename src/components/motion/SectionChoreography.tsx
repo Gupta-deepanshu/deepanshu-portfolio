@@ -6,6 +6,7 @@
  * only adds motion. Everything lives inside gsap.matchMedia(MEDIA.motion), so with
  * prefers-reduced-motion nothing is created and the content is simply static.
  *
+ *   (the section)          fades in as it arrives, gently out as it leaves (opacity)
  *   data-bg                section background layer: fades in/out with the section
  *   data-reveal            fades up once when it enters (batched, staggered)
  *   data-split="heading"   heading lines rise out of a mask (SplitText)
@@ -41,6 +42,25 @@ export function SectionChoreography({ id, className, children, labelledBy, as: T
       const mm = gsap.matchMedia();
 
       mm.add(MEDIA.motion, () => {
+        // Section blending: the whole section fades in as it arrives and gently out as it
+        // leaves, over the ambient page background. Opacity only (a transform here would
+        // break the pinned projects reel inside); floor 0.2, so nothing fully vanishes.
+        if (Tag === 'section') {
+          // immediateRender:false: sections stay fully opaque until their top actually reaches
+          // the viewport (only a sliver is visible then), so content off-screen at load is
+          // never dimmed — keeps contrast checks and no-scroll readers unaffected.
+          gsap.fromTo(
+            root,
+            { opacity: 0.2 },
+            { opacity: 1, ease: 'none', immediateRender: false, scrollTrigger: { trigger: root, start: 'top bottom', end: 'top 60%', scrub: true } },
+          );
+          gsap.fromTo(
+            root,
+            { opacity: 1 },
+            { opacity: 0.2, ease: 'none', immediateRender: false, scrollTrigger: { trigger: root, start: 'bottom 30%', end: 'bottom top', scrub: true } },
+          );
+        }
+
         // Background cross-fade: in as the section arrives, out as it leaves.
         q('[data-bg]').forEach((bg) => {
           gsap

@@ -1,17 +1,15 @@
 'use client';
 
 /**
- * Shared stage for Experience + Projects, after alche.studio's works → about hand-off.
+ * Shared stage for Experience + Projects (after alche.studio's works → about hand-off).
  *
- * 1. The black panel: this wrapper is opaque (bg on the sticky layer) and sits above
- *    the Hero/About stage, whose room stays fixed for one more viewport (HeroStage
- *    extends 100vh below About). So Experience slides up over the room like a sheet,
- *    with a hard edge.
- * 2. The outline D rides in on that panel exactly where the glass D sat in About
- *    (same place, same size), drawing itself as it comes — the glass "becomes" a line
- *    drawing. Once the panel covers the screen it grows into a large centred outline
- *    and stays put (sticky) behind Experience; as Projects arrives it opens up and
- *    fades, handing over to the glass D that floats behind the reel's cards.
+ * 1. The Hero/About room stays fixed one more viewport and dissolves into the ambient
+ *    page background (HeroStage); this wrapper is transparent, so there is no panel
+ *    edge, just changing light.
+ * 2. Meanwhile the outline D arrives exactly where the glass D sat in About (same
+ *    place, same size), drawing itself — the glass "becomes" a line drawing.
+ *    Once Experience fills the screen it grows into a large centred outline and
+ *    stays put (sticky) behind Experience; as Projects arrives it opens up and fades, handing over to the glass D that floats behind the reel's cards.
  * 3. The last 45vh of the stage is masked, so it dissolves into Skills.
  *
  * Reduced motion: no scroll animation; the outline is static, large and centred.
@@ -89,7 +87,7 @@ export function OutlineStage({ children }: { children: ReactNode }) {
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 -z-10 [mask-image:linear-gradient(to_bottom,#000_calc(100%-45vh),transparent)]"
       >
-        <div data-stage-sticky="" className="sticky top-0 h-svh overflow-hidden bg-bg">
+        <div data-stage-sticky="" className="sticky top-0 h-svh overflow-hidden">
           <svg
             data-outline-d=""
             viewBox="-1.05 -1.25 2.3 2.5"

@@ -43,7 +43,9 @@ html {
   text-rendering: optimizeLegibility;
 }
 body {
-  background: var(--bg);
+  /* Transparent: on the home page the fixed AmbientBackground sits behind everything
+     (html keeps the base colour for other pages). */
+  background: transparent;
   color: var(--fg);
   font-family: var(--font-sans);
   line-height: 1.6;
@@ -335,8 +337,7 @@ html[data-intro='skip'] .hero-fade {
 .bg-contact-static {
   background:
     radial-gradient(ellipse at 30% 60%, rgb(165 148 255 / 0.2), transparent 55%),
-    radial-gradient(ellipse at 80% 30%, rgb(150 90 200 / 0.16), transparent 50%),
-    var(--bg);
+    radial-gradient(ellipse at 80% 30%, rgb(150 90 200 / 0.16), transparent 50%);
 }
 .bg-contact-static[data-animate] {
   background-size: 160% 160%;
@@ -420,4 +421,31 @@ html[data-intro='skip'] .hero-fade {
 .font-display {
   font-stretch: 125%;
   letter-spacing: -0.01em;
+}
+
+/* ------------------------------------------------- ambient page background
+   AmbientBackground scrubs these custom properties between section moods.
+   Defaults = the hero's mood (what shows before JS and with reduced motion). */
+.ambient {
+  --g1x: 62%;
+  --g1y: 45%;
+  --g1c: rgba(87, 49, 242, 0.42);
+  --g2x: 15%;
+  --g2y: 85%;
+  --g2c: rgba(40, 60, 190, 0.18);
+  --grid: 0.55;
+  background:
+    radial-gradient(ellipse 55% 60% at var(--g1x) var(--g1y), var(--g1c), transparent 72%),
+    radial-gradient(ellipse 50% 50% at var(--g2x) var(--g2y), var(--g2c), transparent 72%),
+    var(--bg);
+}
+/* The hero room's grid, faint, lit around the main glow. */
+.ambient-grid {
+  opacity: var(--grid);
+  background-image:
+    linear-gradient(rgb(237 234 228 / 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(237 234 228 / 0.05) 1px, transparent 1px);
+  background-size: 96px 96px;
+  background-position: center;
+  mask-image: radial-gradient(ellipse 75% 70% at var(--g1x) var(--g1y), #000 10%, transparent 78%);
 }

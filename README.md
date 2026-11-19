@@ -64,11 +64,13 @@ All copy lives in typed files in `src/content/` (`site.ts`, `experience.ts`, `pr
 The name is split into letters on the server and animated with CSS keyframes from first paint. A JS split would hide the name until hydration, which hurts LCP and makes recruiters wait.
 
 ### Backgrounds and the WebGL budget (`src/lib/gl-budget.ts`)
+One fixed **ambient background** (`AmbientBackground.tsx`, CSS only) sits behind every section: near-black base, two soft glows and the hero room's faint grid. Each section has a mood (glow colours/positions, grid strength) and GSAP scrubs the layer's custom properties from one mood to the next as a section arrives, so the page never cuts to flat black. Section effects below fade in and out over it, and every section's content fades in as it arrives and gently out as it leaves (opacity only, so the pinned reel is unaffected; the entry fade starts only when a section reaches the viewport, so nothing off-screen is dimmed at load).
+
 | Section | Background |
 |---|---|
 | Hero | Glass D scene (three.js, desktop): fluid sim + curved grid room + refractive D; static SVG D elsewhere |
 | About | The hero's room stays (sticky stage shared with the hero): the D moves to the left column, the camera turns, the glow cools; fades out into Experience |
-| Experience | Black panel slides up over the still About room (alche works→about); an outline D draws itself where the glass D was, then grows and stays behind the timeline; faint "+" crosshair grid |
+| Experience | The About room dissolves into the ambient background while an outline D draws itself where the glass D was, then grows and stays behind the timeline; faint "+" crosshair grid |
 | Projects | The outline D opens up and fades as the reel's glass D takes over: the same glass D (shared `three/glass.ts`) floats behind the cards, refracting the room and posters (drawn to a texture first, posters re-drawn on top), turning with the reel; faint star vignette |
 | Skills | CSS dot grid lit by the cursor |
 | Contact | React Bits **Liquid Ether** (WebGL2, desktop only) |
