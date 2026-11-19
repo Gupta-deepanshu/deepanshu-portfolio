@@ -477,14 +477,14 @@ html[data-intro='skip'] .hero-fade {
   height: 30svh;
 }
 .hold-about {
-  height: 50svh;
+  height: 40svh;
 }
 @media (min-width: 768px) {
   .hold-hero {
     height: 60svh;
   }
   .hold-about {
-    height: 100svh;
+    height: 80svh;
   }
 }
 @media (prefers-reduced-motion: reduce) {
