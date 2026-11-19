@@ -11,10 +11,11 @@
  * heading + list), always in the DOM in reading order, so nothing depends on the
  * animation. Phones / reduced motion: the same cards as a plain grid (no pin).
  *
- * Slot maths (slot 0 = front): x = s·DX, y = −s·DY, z = −s·DZ, skewY, fading out
- * past VISIBLE slots. Step k moves card i from slot i−k to i−k−1: the front card drops
- * away and fades (dealt; it does not come back, so each group is seen once), the
- * rest step forward. After the last deal only the final group remains.
+ * Motion model: one continuous deck position (`shown`, in cards) eases toward the scroll
+ * every frame (gsap.ticker, critically damped), and each card's pose is computed from
+ * its fractional slot s = i − shown: x = s·DX, y = −s·DY, z = −s·DZ, skewY, fading past
+ * VISIBLE slots; s < 0 means dealt (drops away and fades, never returns, so each group
+ * is seen once). Smooth through wheel ticks and snaps; transform/opacity only.
  */
 import { useCallback, useRef, useState } from 'react';
 import { education, skills } from '@/content/skills';
@@ -39,16 +40,6 @@ const SPAN = DWELL + LAST;
 /** Timeline time at which card i is settled at the front. */
 const frontAt = (i: number) => (i === 0 ? 0 : DWELL + i);
 
-const slotPose = (s: number) => ({
-  x: s * DX,
-  y: -s * DY,
-  z: -s * DZ,
-  skewY: SKEW,
-  opacity: s < VISIBLE ? 1 : 0,
-  zIndex: N - s,
-});
-/** Slot of a card after `step` deals; negative = already dealt (gone). */
-const slotOf = (card: number, step: number) => card - step;
 
 export function SkillDeck() {
   const stageRef = useRef<HTMLDivElement>(null);
@@ -64,54 +55,92 @@ export function SkillDeck() {
       mm.add('(min-width: 1024px) and (prefers-reduced-motion: no-preference)', () => {
         const cards = gsap.utils.toArray<HTMLElement>('[data-skill-card]', stage);
         setDeck(true);
-        cards.forEach((c, i) => gsap.set(c, slotPose(slotOf(i, 0))));
 
-        // Entrance (Card Swap's intro): as the section scrolls into view, the cards fly up
-        // from below one after another, back of the deck first, and settle into the stack,
-        // so the deck is built by the time the section pins. Scrubbed with scroll.
-        const intro = gsap.timeline({
-          scrollTrigger: { trigger: stage, start: 'top 90%', end: 'top top', scrub: 0.6 },
-        });
-        [...cards].reverse().forEach((c, j) => {
-          const s = slotOf(cards.indexOf(c), 0);
-          if (s >= VISIBLE) return;
-          intro.from(c, { y: '+=' + window.innerHeight * 0.7, rotate: 6 - j * 2, opacity: 0, duration: 0.6, ease: 'power3.out', immediateRender: true }, j * 0.25);
-        });
+        // One continuous deck position instead of per-step tweens: `target` follows the
+        // scroll (in deals, after the dwell), `shown` eases toward it every frame (critically
+        // damped, like the projects reel), and every card's pose is computed from `shown`.
+        // Motion flows through wheel ticks and snaps instead of lurching between eases.
+        let target = 0;
+        let shown = 0;
+        let intro = 0; // 0 → 1 as the section scrolls in (Card Swap-style entrance)
+        let introShown = 0;
+        const smooth = (t: number) => t * t * (3 - 2 * t);
+        const clamp01 = (t: number) => Math.min(1, Math.max(0, t));
+        const vh = () => window.innerHeight;
 
-        const tl = gsap.timeline({ paused: true, defaults: { ease: 'power2.inOut' } });
-        for (let k = 0; k < LAST; k++) {
-          const t = DWELL + k; // deal k starts after the dwell
+        const render = () => {
           cards.forEach((c, i) => {
-            const from = slotOf(i, k);
-            const to = from - 1;
-            if (from < 0) return;
-            if (from === 0) {
-              // Dealt: the front card drops away below the deck and fades out.
-              tl.to(c, { y: DROP, rotate: -5, duration: 0.7, ease: 'power2.in' }, t);
-              tl.to(c, { opacity: 0, duration: 0.35, ease: 'none' }, t + 0.35);
-            } else {
-              tl.set(c, { zIndex: N - to }, t + 0.2);
-              tl.to(c, { ...slotPose(to), zIndex: N - to, duration: 0.6 }, t + 0.2);
+            const s = i - shown; // fractional slot; < 0 = being dealt / gone
+            let x = s * DX;
+            let y = -s * DY;
+            let z = -s * DZ;
+            let rot = 0;
+            let op = clamp01(VISIBLE - s); // fades in as it reaches the last visible slot
+            if (s < 0) {
+              // Dealt: drop away below the deck and fade, then stay gone.
+              const d = smooth(clamp01(-s));
+              x = 0;
+              y = d * DROP;
+              z = 0;
+              rot = -5 * d;
+              op = 1 - smooth(clamp01((-s - 0.3) / 0.6));
             }
+            // Entrance: back of the deck first, each card flies up from below.
+            const order = N - 1 - i;
+            const e = smooth(clamp01(introShown * 1.6 - order * 0.15));
+            y += (1 - e) * vh() * 0.7;
+            rot += (1 - e) * (6 - order);
+            op *= e;
+            c.style.transform = `translate3d(${x}px, ${y}px, ${z}px) rotate(${rot}deg) skewY(${SKEW}deg)`;
+            c.style.opacity = String(op);
+            c.style.zIndex = String(100 - Math.round(s * 10));
+            c.style.visibility = op < 0.01 ? 'hidden' : 'visible';
           });
-        }
-        // Pin the timeline length to SPAN so scroll maps evenly (last tweens end early).
-        tl.set({}, {}, SPAN);
+        };
+
+        const tick = (_t: number, deltaMs: number) => {
+          const k = 1 - Math.exp(-Math.min(deltaMs, 50) / 1000 * 9);
+          if (Math.abs(target - shown) < 0.0005 && Math.abs(intro - introShown) < 0.0005) {
+            if (shown !== target || introShown !== intro) {
+              shown = target;
+              introShown = intro;
+              render();
+            }
+            return;
+          }
+          shown += (target - shown) * k;
+          introShown += (intro - introShown) * k;
+          render();
+        };
+        gsap.ticker.add(tick);
+        render();
+
+        const introTrigger = ScrollTrigger.create({
+          trigger: stage,
+          start: 'top 90%',
+          end: 'top top',
+          onUpdate: (self) => (intro = self.progress),
+          onRefresh: (self) => (intro = introShown = self.progress),
+        });
 
         triggerRef.current = ScrollTrigger.create({
           trigger: stage,
           pin: true,
           start: 'top top',
-          end: () => `+=${window.innerHeight * PER_STEP * SPAN}`,
-          scrub: 0.6,
-          animation: tl,
+          end: () => `+=${vh() * PER_STEP * SPAN}`,
           invalidateOnRefresh: true,
           // Snap points: every card settled at the front, plus the end of the dwell, so the
           // first scroll lands with the first card still in front (snapping is directional,
           // so without this stop it would skip straight to the second card).
-          snap: { snapTo: [0, DWELL, ...skills.slice(1).map((_, i) => frontAt(i + 1))].map((t) => t / SPAN), duration: { min: 0.3, max: 0.7 }, delay: 0.1, ease: 'power2.inOut' },
+          snap: {
+            snapTo: [0, DWELL, ...skills.slice(1).map((_, i) => frontAt(i + 1))].map((t) => t / SPAN),
+            duration: { min: 0.4, max: 0.9 },
+            delay: 0.08,
+            ease: 'sine.inOut',
+          },
           onUpdate: (self) => {
-            const next = Math.min(LAST, Math.max(0, Math.round(self.progress * SPAN - DWELL)));
+            target = Math.min(LAST, Math.max(0, self.progress * SPAN - DWELL));
+            const next = Math.min(LAST, Math.max(0, Math.round(target)));
             setActive((prev) => (prev === next ? prev : next));
           },
         });
@@ -119,12 +148,11 @@ export function SkillDeck() {
         ScrollTrigger.refresh();
 
         return () => {
+          gsap.ticker.remove(tick);
+          introTrigger.kill();
           triggerRef.current?.kill();
           triggerRef.current = null;
-          intro.scrollTrigger?.kill();
-          intro.kill();
-          tl.kill();
-          gsap.set(cards, { clearProps: 'all' });
+          cards.forEach((c) => c.removeAttribute('style'));
           setDeck(false);
           setActive(0);
           requestAnimationFrame(() => ScrollTrigger.refresh());
@@ -184,11 +212,10 @@ export function SkillDeck() {
                 data-skill-card=""
                 aria-labelledby={`skill-group-${i}`}
                 className={cn(
-                  'overflow-hidden rounded-2xl border border-line bg-[linear-gradient(160deg,#1a1726_0%,#110f18_60%,#0d0c12_100%)] p-6 shadow-[0_30px_60px_-24px_rgb(0_0_0/0.8)]',
-                  deck && 'absolute bottom-[6%] left-[4%] w-[min(34rem,60%)] p-9 [backface-visibility:hidden]',
+                  'overflow-hidden rounded-2xl border border-line bg-[radial-gradient(circle_at_100%_0%,rgb(165_148_255/0.16),transparent_45%),linear-gradient(160deg,#1a1726_0%,#110f18_60%,#0d0c12_100%)] p-6 shadow-[0_30px_60px_-24px_rgb(0_0_0/0.8)]',
+                  deck && 'absolute bottom-[6%] left-[4%] w-[min(34rem,60%)] p-9 will-change-transform [backface-visibility:hidden]',
                 )}
               >
-                <div aria-hidden="true" className="pointer-events-none absolute -right-16 -top-16 size-48 rounded-full bg-accent/15 blur-3xl" />
                 <p className="relative flex justify-between font-mono text-xs uppercase tracking-[0.14em] text-muted">
                   <span>
                     {String(i + 1).padStart(2, '0')} / {String(N).padStart(2, '0')}
