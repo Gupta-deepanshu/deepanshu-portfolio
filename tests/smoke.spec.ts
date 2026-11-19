@@ -80,3 +80,19 @@ for (const width of [1440, 375]) {
     }
   });
 }
+
+test('skills: every group is real HTML; desktop deck pins and deals through all six', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/');
+  const section = page.locator('#skills');
+  for (const label of ['Languages', 'Frameworks', 'Styling', 'APIs & CMS', 'Testing & tools', 'AI']) {
+    await expect(section.getByRole('heading', { level: 3, name: label })).toHaveCount(1);
+  }
+  await expect(section).toContainText('B.Tech in Computer Science');
+  const top = await section.evaluate((el) => el.getBoundingClientRect().top + window.scrollY);
+  await scrollToY(page, top);
+  const groups = section.getByRole('list', { name: 'Skill groups' });
+  await expect(groups.locator('[aria-current="step"]')).toContainText('Languages');
+  await groups.getByRole('button', { name: /AI/ }).click();
+  await expect(groups.locator('[aria-current="step"]')).toContainText('AI', { timeout: 5000 });
+});

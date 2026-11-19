@@ -228,24 +228,6 @@ html[data-intro='skip'] .hero-fade {
   }
 }
 
-/* --------------------------------------------------------------- marquee */
-.marquee {
-  display: flex;
-  width: max-content;
-  animation: marquee var(--duration, 60s) linear infinite;
-}
-.marquee[data-reverse] {
-  animation-direction: reverse;
-}
-.marquee-wrap:hover .marquee {
-  animation-play-state: paused;
-}
-@keyframes marquee {
-  to {
-    transform: translateX(-50%);
-  }
-}
-
 /* ---------------------------------------------------- section backgrounds
    Each background bleeds past its section and is masked at the edges so
    neighbouring sections dissolve into each other. --mx/--my come from the
@@ -361,14 +343,6 @@ html[data-intro='skip'] .hero-fade {
     animation-delay: 0s !important;
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
-  }
-  .marquee {
-    animation: none !important;
-    width: auto;
-    flex-wrap: wrap;
-  }
-  .marquee [data-dup] {
-    display: none;
   }
   .scroll-cue::after {
     animation: none !important;
