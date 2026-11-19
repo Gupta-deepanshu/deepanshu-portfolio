@@ -32,6 +32,12 @@ const VISIBLE = 4;
 const DROP = 520;
 /** Scroll per swap, in viewport heights. */
 const PER_STEP = 0.6;
+/** Extra scroll (in steps) the first card stays at the front before the first deal. */
+const DWELL = 1;
+/** Timeline length: the dwell, then one unit per deal. */
+const SPAN = DWELL + LAST;
+/** Timeline time at which card i is settled at the front. */
+const frontAt = (i: number) => (i === 0 ? 0 : DWELL + i);
 
 const slotPose = (s: number) => ({
   x: s * DX,
@@ -74,32 +80,38 @@ export function SkillDeck() {
 
         const tl = gsap.timeline({ paused: true, defaults: { ease: 'power2.inOut' } });
         for (let k = 0; k < LAST; k++) {
+          const t = DWELL + k; // deal k starts after the dwell
           cards.forEach((c, i) => {
             const from = slotOf(i, k);
             const to = from - 1;
             if (from < 0) return;
             if (from === 0) {
               // Dealt: the front card drops away below the deck and fades out.
-              tl.to(c, { y: DROP, rotate: -5, duration: 0.7, ease: 'power2.in' }, k);
-              tl.to(c, { opacity: 0, duration: 0.35, ease: 'none' }, k + 0.35);
+              tl.to(c, { y: DROP, rotate: -5, duration: 0.7, ease: 'power2.in' }, t);
+              tl.to(c, { opacity: 0, duration: 0.35, ease: 'none' }, t + 0.35);
             } else {
-              tl.set(c, { zIndex: N - to }, k + 0.2);
-              tl.to(c, { ...slotPose(to), zIndex: N - to, duration: 0.6 }, k + 0.2);
+              tl.set(c, { zIndex: N - to }, t + 0.2);
+              tl.to(c, { ...slotPose(to), zIndex: N - to, duration: 0.6 }, t + 0.2);
             }
           });
         }
+        // Pin the timeline length to SPAN so scroll maps evenly (last tweens end early).
+        tl.set({}, {}, SPAN);
 
         triggerRef.current = ScrollTrigger.create({
           trigger: stage,
           pin: true,
           start: 'top top',
-          end: () => `+=${window.innerHeight * PER_STEP * LAST}`,
+          end: () => `+=${window.innerHeight * PER_STEP * SPAN}`,
           scrub: 0.6,
           animation: tl,
           invalidateOnRefresh: true,
-          snap: { snapTo: 1 / LAST, duration: { min: 0.3, max: 0.7 }, delay: 0.1, ease: 'power2.inOut' },
+          // Snap points: every card settled at the front, plus the end of the dwell, so the
+          // first scroll lands with the first card still in front (snapping is directional,
+          // so without this stop it would skip straight to the second card).
+          snap: { snapTo: [0, DWELL, ...skills.slice(1).map((_, i) => frontAt(i + 1))].map((t) => t / SPAN), duration: { min: 0.3, max: 0.7 }, delay: 0.1, ease: 'power2.inOut' },
           onUpdate: (self) => {
-            const next = Math.round(self.progress * LAST);
+            const next = Math.min(LAST, Math.max(0, Math.round(self.progress * SPAN - DWELL)));
             setActive((prev) => (prev === next ? prev : next));
           },
         });
@@ -126,7 +138,7 @@ export function SkillDeck() {
   const go = useCallback((i: number) => {
     const st = triggerRef.current;
     if (!st) return;
-    scrollToY(st.start + ((st.end - st.start) * i) / LAST);
+    scrollToY(st.start + ((st.end - st.start) * frontAt(i)) / SPAN);
   }, []);
 
   return (
