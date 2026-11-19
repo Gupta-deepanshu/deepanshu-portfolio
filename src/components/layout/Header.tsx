@@ -6,40 +6,56 @@ const nav = [
   { href: '/#about', label: 'About' },
   { href: '/#experience', label: 'Experience' },
   { href: '/#projects', label: 'Work' },
-  { href: '/#contact', label: 'Contact' },
 ];
 
+/**
+ * alche.studio-style header: wordmark on the left, plain mono links centred,
+ * an outlined Contact pill on the right. A soft gradient (not a bar) keeps the
+ * links readable over whatever scrolls underneath.
+ */
 export function Header() {
   const resume = hrefOf(site.links.resume);
   return (
     <header className="pointer-events-none fixed inset-x-0 top-0 z-50">
-      <div className="container-x flex items-center justify-between py-5">
+      <div aria-hidden="true" className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-bg/75 to-transparent" />
+      <div className="container-x relative grid grid-cols-[1fr_auto] items-center py-6 md:grid-cols-[1fr_auto_1fr]">
         <Link
           href="/"
-          className="pointer-events-auto font-display text-xl tracking-tight text-fg"
+          className="type-wide pointer-events-auto w-fit text-lg leading-none text-fg sm:text-xl"
           aria-label={`${site.name}, home`}
         >
           {site.shortName}
           <span className="text-accent">.</span>
         </Link>
-        <nav aria-label="Primary" className="pointer-events-auto">
-          <ul className="flex items-center gap-1 rounded-full border border-line bg-bg/60 px-2 py-1 text-sm backdrop-blur-md">
-            {nav.map((item, i) => (
-              <li key={item.href} className={i < 2 ? 'hidden sm:block' : undefined}>
-                <Link href={item.href} className="block rounded-full px-3 py-1.5 text-muted transition-colors hover:text-fg">
+
+        <nav aria-label="Primary" className="pointer-events-auto hidden md:block">
+          <ul className="flex items-center gap-10 font-mono text-[0.8rem] tracking-[0.06em]">
+            {nav.map((item) => (
+              <li key={item.href}>
+                <Link href={item.href} className="text-fg/80 transition-colors hover:text-accent">
                   {item.label}
                 </Link>
               </li>
             ))}
-            {resume && (
-              <li>
-                <a href={resume} download className="block rounded-full bg-fg px-3 py-1.5 text-bg transition-colors hover:bg-accent">
-                  Résumé
-                </a>
-              </li>
-            )}
           </ul>
         </nav>
+
+        <div className="pointer-events-auto flex items-center justify-end gap-3">
+          <Link href="/#projects" className="font-mono text-[0.8rem] tracking-[0.06em] text-fg/80 transition-colors hover:text-accent md:hidden">
+            Work
+          </Link>
+          {resume && (
+            <a href={resume} download className="hidden font-mono text-[0.8rem] tracking-[0.06em] text-fg/80 transition-colors hover:text-accent sm:block">
+              Résumé
+            </a>
+          )}
+          <Link
+            href="/#contact"
+            className="rounded-full border border-fg/50 px-5 py-2.5 font-mono text-[0.75rem] tracking-[0.06em] text-fg transition-colors hover:border-accent hover:text-accent"
+          >
+            Contact
+          </Link>
+        </div>
       </div>
     </header>
   );

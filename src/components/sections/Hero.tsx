@@ -25,13 +25,13 @@ export function Hero() {
             id="hero-title"
             aria-label={site.name}
             data-hero-name=""
-            className="font-display text-[21vw] leading-[0.86] tracking-[-0.035em] md:whitespace-nowrap md:text-[min(15vw,42vh)]"
+            className="type-wide text-[11vw] leading-[0.92] md:text-[min(10.5vw,21vh)]"
           >
             {words.map((word, w) => (
               <span
                 key={word}
                 aria-hidden="true"
-                className={`block overflow-hidden pb-[0.06em] md:inline-block ${w < words.length - 1 ? 'md:mr-[0.2em]' : ''}`}
+                className="block overflow-hidden whitespace-nowrap pb-[0.04em]"
               >
                 {[...word].map((ch) => (
                   <span key={i} className="hero-char" style={{ '--i': i++ } as React.CSSProperties}>

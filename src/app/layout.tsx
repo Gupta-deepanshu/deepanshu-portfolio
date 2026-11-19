@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Geist, Geist_Mono, Instrument_Serif } from 'next/font/google';
+import { Archivo, Geist, Geist_Mono, Instrument_Serif } from 'next/font/google';
 import { site } from '@/content/site';
 import { SmoothScroll } from '@/components/providers/SmoothScroll';
 import { PageTransitionProvider } from '@/components/providers/PageTransition';
@@ -17,6 +17,9 @@ const instrument = Instrument_Serif({
   style: ['normal', 'italic'],
   display: 'swap',
 });
+// Wide display face for the name and logo: Archivo's width axis at 125% is the closest
+// free match to Acumin Pro Wide, the (Adobe-licensed) wide face alche.studio uses.
+const archivo = Archivo({ variable: '--font-archivo', subsets: ['latin'], axes: ['wdth'], display: 'swap' });
 
 export const metadata: Metadata = {
   metadataBase: new URL(site.url),
@@ -53,7 +56,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
   return (
     <html
       lang="en"
-      className={`${geist.variable} ${geistMono.variable} ${instrument.variable} dark antialiased`}
+      className={`${geist.variable} ${geistMono.variable} ${instrument.variable} ${archivo.variable} dark antialiased`}
       suppressHydrationWarning
     >
       <head>

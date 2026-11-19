@@ -292,6 +292,10 @@ function drawHeading(h1: HTMLElement, pixelRatio: number, into?: HTMLCanvasEleme
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   const cs = getComputedStyle(h1);
   ctx.font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+  // Match CSS width axis (e.g. font-stretch: 125% → "expanded") and text-transform.
+  const stretch = ({ '125%': 'expanded', '150%': 'extra-expanded', '112.5%': 'semi-expanded' } as Record<string, CanvasFontStretch>)[cs.fontStretch];
+  if (stretch && 'fontStretch' in ctx) ctx.fontStretch = stretch;
+  const upper = cs.textTransform === 'uppercase';
   ctx.textBaseline = 'alphabetic';
   const m = ctx.measureText('Hg');
   const ascent = m.fontBoundingBoxAscent;
@@ -299,7 +303,7 @@ function drawHeading(h1: HTMLElement, pixelRatio: number, into?: HTMLCanvasEleme
   h1.querySelectorAll<HTMLElement>('.hero-char').forEach((ch) => {
     const r = ch.getBoundingClientRect();
     ctx.fillStyle = getComputedStyle(ch).color;
-    ctx.fillText(ch.textContent ?? '', r.left - box.left + pad, r.top - box.top + pad + (r.height - contentHeight) / 2 + ascent);
+    ctx.fillText(upper ? (ch.textContent ?? '').toUpperCase() : (ch.textContent ?? ''), r.left - box.left + pad, r.top - box.top + pad + (r.height - contentHeight) / 2 + ascent);
   });
   return { canvas, pad };
 }
