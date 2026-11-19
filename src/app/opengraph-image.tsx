@@ -11,7 +11,7 @@ export default function Image() {
     subtitle: site.intro,
     kicker: site.role.toUpperCase(),
     corner: site.location.toUpperCase(),
-    accent: '#FF6A3D',
+    accent: '#A594FF',
     ...size,
   });
 }

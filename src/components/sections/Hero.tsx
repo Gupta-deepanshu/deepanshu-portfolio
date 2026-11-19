@@ -1,6 +1,7 @@
 import { site } from '@/content/site';
 import { WebGLBackground } from '@/components/backgrounds/WebGLBackground';
 import { HeroScroll } from './HeroScroll';
+import { StaticD } from './StaticD';
 
 /**
  * Hero. The name is split into letters on the server and revealed with CSS
@@ -13,7 +14,7 @@ export function Hero() {
   let i = 0;
   return (
     <section id="top" aria-labelledby="hero-title" className="relative isolate flex min-h-svh flex-col justify-end pb-16 pt-32 sm:pb-20">
-      <WebGLBackground kind="silk" staticClassName="bg-hero-static" slotId="hero" />
+      <WebGLBackground kind="glass" staticClassName="bg-hero-static" staticContent={<StaticD />} desktopOnly slotId="hero" />
       <HeroScroll>
         <div className="container-x">
           <p className="eyebrow hero-fade mb-6" style={{ '--d': 0 } as React.CSSProperties}>
