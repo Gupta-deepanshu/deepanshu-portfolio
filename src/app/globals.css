@@ -469,3 +469,27 @@ html[data-intro='skip'] .hero-fade {
     stroke-dashoffset: 0;
   }
 }
+
+/* ------------------------------------------------------------ hold zones
+   Empty stretches between sections where only the fixed background and the D move
+   (HoldZone). Shorter on phones; none with reduced motion. */
+.hold-hero {
+  height: 30svh;
+}
+.hold-about {
+  height: 50svh;
+}
+@media (min-width: 768px) {
+  .hold-hero {
+    height: 60svh;
+  }
+  .hold-about {
+    height: 100svh;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hold-hero,
+  .hold-about {
+    height: 0;
+  }
+}

@@ -363,6 +363,7 @@ export default function GlassD({ paused = false, dpr = 1.25, interactive = true,
     const h1 = document.querySelector<HTMLElement>(textSelector);
     const scroller = h1?.closest<HTMLElement>('[data-hero-content]') ?? null;
     const heroSection = h1?.closest<HTMLElement>('section') ?? null;
+    const holdHero = document.querySelector<HTMLElement>('[data-hold="hero"]');
     let disposed = false;
     const paintText = () => {
       if (!h1 || disposed) return;
@@ -502,8 +503,9 @@ export default function GlassD({ paused = false, dpr = 1.25, interactive = true,
       const opacity = scroller ? parseFloat(scroller.style.opacity || '1') : 1;
       if (textReady) textAlpha = Math.min(1, textAlpha + dt / 0.6);
 
-      // Hero → About: 0 while the hero fills the screen, 1 once it has scrolled away.
-      const heroH = heroSection?.offsetHeight || window.innerHeight;
+      // Hero → About: 0 while the hero fills the screen, 1 once it and the hold after it
+      // (HoldZone "hero": an empty stretch where only the D moves) have scrolled away.
+      const heroH = (heroSection?.offsetHeight || window.innerHeight) + (holdHero?.offsetHeight ?? 0);
       const lin = Math.min(1, Math.max(0, sy / heroH));
       const t = lin * lin * (3 - 2 * lin);
 

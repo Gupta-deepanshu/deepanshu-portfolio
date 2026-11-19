@@ -11,7 +11,9 @@
  *
  *   1. About ends → the hero room (with the glass D, resting in About's left column)
  *      dissolves first (HeroStage). Then the outline traces itself at that exact spot
- *      and size, and glides to a large centred outline behind Experience.
+ *      and size, and glides to a large centred outline behind Experience. Both happen in
+ *      the empty hold that opens this stage (HoldZone "about-out"), so nothing else
+ *      moves while the D changes; the glide plays as Experience arrives.
  *   2. Projects arrives → the outline moves to exactly where the reel's glass D sits
  *      (≈9% above centre, same height), then rides up with the reel stage over its last
  *      25vh before the pin, cross-fading into the glass D (PinnedGallery drives the
@@ -77,7 +79,7 @@ export function OutlineStage({ children }: { children: ReactNode }) {
         gsap
           .timeline({
             defaults: { ease: 'none', autoRound: false },
-            scrollTrigger: { trigger: root, start: 'top 78%', end: 'top 10%', scrub: true, invalidateOnRefresh: true },
+            scrollTrigger: { trigger: root, start: 'top 63%', end: 'top top', scrub: true, invalidateOnRefresh: true },
           })
           .to(d, { opacity: 1, duration: 0.25 }, 0)
           .fromTo(inner, { scale: 0.92, transformOrigin: '50% 50%' }, { scale: 1, duration: 1, ease: 'power2.out' }, 0)
@@ -95,7 +97,7 @@ export function OutlineStage({ children }: { children: ReactNode }) {
             scale: 1,
             ease: 'power2.inOut',
             immediateRender: false,
-            scrollTrigger: { trigger: root, start: 'top 15%', end: () => `+=${vh() * 0.9}`, scrub: true, invalidateOnRefresh: true },
+            scrollTrigger: { trigger: root, start: 'top top', end: () => `+=${vh() * 0.9}`, scrub: true, invalidateOnRefresh: true },
           },
         );
 

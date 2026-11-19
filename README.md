@@ -64,6 +64,8 @@ All copy lives in typed files in `src/content/` (`site.ts`, `experience.ts`, `pr
 The name is split into letters on the server and animated with CSS keyframes from first paint. A JS split would hide the name until hydration, which hurts LCP and makes recruiters wait.
 
 ### Backgrounds and the WebGL budget (`src/lib/gl-budget.ts`)
+**Hold zones** (`HoldZone.tsx`, after alche's intro/outro containers): empty stretches between Hero → About (60vh) and About → Experience (100vh) where no content moves, only the fixed background and the D, which time their hand-offs to them. On desktop, stopping in the middle of a hold eases (~1 s) on in the direction you were scrolling, so the page never rests halfway through a hand-off and never pulls you back; no snapping near the ends or inside reading sections. Phones: shorter holds, no snapping. Reduced motion: no holds.
+
 One fixed **ambient background** (`AmbientBackground.tsx`, CSS only) sits behind every section: near-black base, two soft glows and the hero room's faint grid. Each section has a mood (glow colours/positions, grid strength) and GSAP scrubs the layer's custom properties from one mood to the next as a section arrives, so the page never cuts to flat black. Section effects below fade in and out over it, and every section's content fades in as it arrives and gently out as it leaves (opacity only, so the pinned reel is unaffected; the entry fade starts only when a section reaches the viewport, so nothing off-screen is dimmed at load).
 
 | Section | Background |

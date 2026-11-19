@@ -30,12 +30,13 @@ export function HeroStage({ children }: { children: ReactNode }) {
       mm.add(MEDIA.motion, () => {
         // Hand-off: the room dissolves over the end of About into the ambient page
         // background (same violet glow + grid). It is fully gone just before the outline
-        // D starts tracing itself in the glass D's exact spot (OutlineStage: 'top 78%'):
+        // D starts tracing itself in the glass D's exact spot (OutlineStage: 'top 63%'),
+        // all inside the empty hold before Experience (HoldZone "about-out"):
         // strictly one after the other, never two Ds at once.
         gsap.fromTo(
           root.querySelector('[data-stage-bg]'),
           { opacity: 1 },
-          { opacity: 0, ease: 'none', scrollTrigger: { trigger: root.querySelector('#about'), start: 'bottom bottom', end: 'bottom 80%', scrub: true } },
+          { opacity: 0, ease: 'none', scrollTrigger: { trigger: root.querySelector('#about'), start: 'bottom bottom', end: 'bottom 65%', scrub: true } },
         );
         gsap.to(root.querySelectorAll('.static-d svg'), {
           opacity: 0.1,
