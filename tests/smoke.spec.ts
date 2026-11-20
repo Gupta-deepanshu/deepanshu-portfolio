@@ -30,7 +30,7 @@ test('unknown project shows the not-found page', async ({ page }) => {
 });
 
 test('placeholder links show "Coming soon" instead of linking', async ({ page }) => {
-  await page.goto('/projects/formsmith');
+  await page.goto('/projects/real-estate'); // GitHub link is still a PLACEHOLDER
   const placeholders = page.locator('[data-placeholder]');
   await expect(placeholders.first()).toBeVisible();
   await expect(placeholders.first()).toContainText('Coming soon');
