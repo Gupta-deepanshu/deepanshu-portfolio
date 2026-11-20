@@ -25,11 +25,11 @@ Dark, cinematic, scroll-driven "studio" feel (inspired by alche.studio, brandapp
 - **Ask before adding any dependency** not already agreed.
 
 ## Content (edit without touching components)
-- `src/content/site.ts` — name, role, location, intro, summary, email, links (LinkedIn/GitHub/resume = PLACEHOLDER)
+- `src/content/site.ts` — name, role, location, intro, summary, email, links (LinkedIn, GitHub, résumé at `public/Deepanshu_Gupta_Resume.pdf`), site url
 - `src/content/experience.ts`, `projects.ts` (6 projects, carousel order), `skills.ts`, `education.ts`
 - Placeholder values use the `PLACEHOLDER` sentinel. A placeholder link is never rendered as a broken link: disabled "Coming soon" or hidden.
 - Project media auto-detected from `public/projects/<slug>/` (poster image, optional muted loop video); otherwise a generated gradient/noise poster using the project accent + title.
-- Never show the phone number. Email via mailto.
+- Never show the phone number on the page. Email via mailto. (The downloadable résumé PDF does include it: the owner's choice.)
 
 ## Structure
 Loader (<1 s, skippable, skipped for returning visitors & reduced motion) → Hero → About → Experience (self-drawing timeline) → Projects (pinned curved reel of 6, 1/6…6/6, "View as list", swipe carousel on mobile) → Skills (pinned card deck of skill groups, dealt once by scroll; Education alongside) → Contact → Footer.

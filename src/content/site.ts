@@ -1,4 +1,4 @@
-import { PLACEHOLDER, type Site } from './types';
+import type { Site } from './types';
 
 export const site: Site = {
   name: 'Deepanshu Gupta',
@@ -18,12 +18,11 @@ export const site: Site = {
   ],
   email: 'deepanshug.707@gmail.com',
   links: {
-    linkedin: PLACEHOLDER, // e.g. 'https://www.linkedin.com/in/your-handle'
-    github: PLACEHOLDER, // e.g. 'https://github.com/your-handle'
-    resume: PLACEHOLDER, // set to '/resume.pdf' once public/resume.pdf exists
+    linkedin: 'https://www.linkedin.com/in/deepanshu-gupta-1656b11b1/',
+    github: 'https://github.com/Gupta-deepanshu',
+    resume: '/Deepanshu_Gupta_Resume.pdf',
   },
-  // PLACEHOLDER: replace with your real domain once deployed.
-  url: 'https://deepanshu-portfolio.vercel.app',
+  url: 'https://deepanshu-portfolio-pied.vercel.app',
   seo: {
     title: 'Deepanshu Gupta: Senior Frontend Engineer',
     description:
