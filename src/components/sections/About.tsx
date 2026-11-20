@@ -33,7 +33,7 @@ export function About() {
                 <dt className="sr-only">{fact.label}</dt>
                 <dd className="font-display font-semibold text-4xl text-fg sm:text-5xl">
                   {fact.value}
-                  <span aria-hidden="true" className="mt-2 block font-sans text-sm text-muted">{fact.label}</span>
+                  <span aria-hidden="true" className="mt-2 block text-balance font-sans text-sm text-muted">{fact.label}</span>
                 </dd>
               </div>
             ))}
