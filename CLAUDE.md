@@ -32,7 +32,7 @@ Dark, cinematic, scroll-driven "studio" feel (inspired by alche.studio, brandapp
 - Never show the phone number on the page. Email via mailto. (The downloadable résumé PDF does include it: the owner's choice.)
 
 ## Structure
-Loader (<1 s, skippable, skipped for returning visitors & reduced motion) → Hero → About → Experience (self-drawing timeline) → Projects (pinned curved reel of 6, 1/6…6/6, "View as list", swipe carousel on mobile) → Skills (pinned card deck of skill groups, dealt once by scroll; Education alongside) → Contact → Footer.
+Loader (<1 s, skippable, skipped for returning visitors & reduced motion) → Hero → About → Experience (self-drawing timeline) → Projects (pinned curved reel of 6, 1/6…6/6, "View as list", swipe carousel on mobile) → Skills (React Bits Depth Carousel of skill groups: pinned and turned once by scroll on desktop, swipe/buttons/arrow keys on phones and reduced motion; Education alongside) → Contact → Footer.
 `/projects/[slug]`: featured = full case study; earlier = short template. Smooth page transitions.
 
 ## Section backgrounds
