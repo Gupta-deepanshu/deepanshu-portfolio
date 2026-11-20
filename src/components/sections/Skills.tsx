@@ -5,7 +5,7 @@ import { SkillDeck } from '@/components/skills/SkillDeck';
 /**
  * Skills: a deck of six skill-group cards (SkillDeck). On desktop the section pins and
  * scroll deals through the deck once; elsewhere the cards are a plain grid. Education
- * sits in the left column.
+ * is a quiet line under the group index (after the cards on mobile).
  */
 export function Skills() {
   return (

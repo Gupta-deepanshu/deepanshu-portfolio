@@ -172,8 +172,10 @@ export function SkillDeck() {
 
   return (
     <div ref={stageRef} className={cn('relative', deck ? 'flex h-svh items-center' : 'py-24 lg:py-32')}>
-      <div className="container-x grid w-full gap-12 lg:grid-cols-12 lg:items-center">
-        <div className="lg:col-span-4">
+      {/* DOM order: heading, deck, education (mobile reads them in that order). On desktop
+          the deck spans both rows on the right; heading and education meet at its middle. */}
+      <div className="container-x grid w-full gap-12 lg:grid-cols-12">
+        <div className="lg:col-span-4 lg:row-start-1 lg:self-end">
           <p className="eyebrow">04 / Skills</p>
           <h2 id="skills-title" className="mt-4 font-display text-3xl font-semibold uppercase">
             Toolkit
@@ -198,10 +200,9 @@ export function SkillDeck() {
               </li>
             ))}
           </ol>
-          <EducationCard />
         </div>
 
-        <div className="lg:col-span-8">
+        <div className="lg:col-span-8 lg:col-start-5 lg:row-span-2 lg:row-start-1 lg:self-center">
           <div
             className={cn(
               deck ? 'relative mx-auto h-[min(40rem,76vh)] w-full [perspective:900px]' : 'grid gap-4 sm:grid-cols-2 lg:grid-cols-3',
@@ -238,26 +239,25 @@ export function SkillDeck() {
             ))}
           </div>
         </div>
+
+        <EducationLine />
       </div>
     </div>
   );
 }
 
-function EducationCard() {
+/** A quiet credential line under the toolkit (a footnote, not another card). */
+function EducationLine() {
   return (
-    <aside aria-labelledby="edu-title" className="mt-10 max-w-sm rounded-2xl border border-line bg-bg/50 p-6 backdrop-blur-sm">
+    <aside aria-labelledby="edu-title" className="max-w-sm border-t border-line pt-6 lg:col-span-4 lg:row-start-2 lg:self-start">
       <h3 id="edu-title" className="eyebrow">
         Education
       </h3>
-      <p className="mt-4 text-lg">{education.degree}</p>
-      <p className="mt-1 text-muted">
+      <p className="mt-3 text-lg leading-snug">{education.degree}</p>
+      <p className="mt-2 font-mono text-sm text-muted">
         {education.school}, {education.location}
-      </p>
-      <p className="mt-4 flex justify-between font-mono text-sm text-muted">
-        <span>
-          {education.start}–{education.end}
-        </span>
-        <span className="text-accent">{education.grade}</span>
+        <br />
+        {education.start}–{education.end} · <span className="text-accent">{education.grade}</span>
       </p>
     </aside>
   );
