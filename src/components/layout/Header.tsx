@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { site } from '@/content/site';
 import { hrefOf } from '@/lib/placeholder';
+import FoldText from '@/components/reactbits/FoldText';
 
 const nav = [
   { href: '/#about', label: 'About' },
@@ -33,7 +34,21 @@ export function Header() {
             {nav.map((item) => (
               <li key={item.href}>
                 <Link href={item.href} className="text-fg/80 transition-colors hover:text-accent">
-                  {item.label}
+                  {/* Letters re-fold on hover/focus. Inherits the link's type so the nav's
+                      mono size, weight and tracking are unchanged; accessible name comes
+                      from FoldText's sr-only copy (the folding letters are aria-hidden). */}
+                  <FoldText
+                    text={item.label}
+                    trigger="hover"
+                    hinge="top"
+                    duration={0.5}
+                    stagger={0.03}
+                    perspective={300}
+                    creaseShading={0.35}
+                    fontSize="inherit"
+                    fontWeight="inherit"
+                    style={{ letterSpacing: 'inherit', lineHeight: 'inherit' }}
+                  />
                 </Link>
               </li>
             ))}
