@@ -2,6 +2,10 @@
 import type { MediaManifest } from './types';
 
 export const mediaManifest: MediaManifest = {
+  "crypto-tracker": {
+    "poster": "/projects/crypto-tracker/poster.webp",
+    "video": []
+  },
   "real-estate": {
     "poster": "/projects/real-estate/poster.webp",
     "video": []
