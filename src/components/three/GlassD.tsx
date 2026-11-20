@@ -121,47 +121,146 @@ uniform sampler2D uVel; uniform vec2 uRes; uniform float uTime; uniform float uM
 varying vec2 vUv;
 ${ROOM_CHUNK}
 
+/* Holo mosaic wall: adapted from React Bits "Holo Mosaic" (its dark-mode tile shader;
+   https://reactbits.dev/backgrounds/holo-mosaic). Bevelled metal tiles diffract a
+   slowly wandering light into spectral bands, with glints and glitter. Changes for this
+   scene: tiles are laid on the curved room wall (they bow like the old grid and turn
+   with uTurn), colours are our palette (near-black violet tiles, lavender metal, a
+   violet to blue spectrum), and its intro, click waves and hover tilt are left out (the
+   cursor fluid already reacts). The constants below are its props. */
+const float EYE = 1.15;
+const float TILES = 7.0;          // tiles per wall unit (sets the tile size)
+const float GAP = 0.08;
+const float ROUND = 0.15;
+const float BEVEL = 0.35;
+const float TILT = 0.35;
+const float SCATTER = 0.3;
+const float RIPPLE = 0.6;
+const float BANDS = 1.3;
+const float SOFT = 0.12;
+const float INTENSITY = 0.75;
+const float SATURATION = 0.6;
+const float GLITTER = 0.5;
+const float SHEEN = 0.5;
+const vec2 SPECTRUM = vec2(400.0, 478.0);           // violet to blue (our palette)
+const vec3 TILE = vec3(0.035, 0.03, 0.055);          // near-black violet
+const vec3 SEAM = vec3(0.012, 0.011, 0.02);
+const vec3 METAL = vec3(0.72, 0.68, 0.98);           // lavender, from the accent
+
+float h21(vec2 p) {
+  vec3 q = fract(vec3(p.xyx) * vec3(0.1031, 0.1030, 0.0973));
+  q += dot(q, q.yzx + 33.33);
+  return fract((q.x + q.y) * q.z);
+}
+float h31(vec3 p) {
+  p = fract(p * vec3(0.1031, 0.1030, 0.0973));
+  p += dot(p, p.yxz + 33.33);
+  return fract((p.x + p.y) * p.z);
+}
+float vn3(vec3 p) {
+  vec3 i = floor(p); vec3 f = fract(p); f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(mix(h31(i), h31(i + vec3(1, 0, 0)), f.x), mix(h31(i + vec3(0, 1, 0)), h31(i + vec3(1, 1, 0)), f.x), f.y),
+             mix(mix(h31(i + vec3(0, 0, 1)), h31(i + vec3(1, 0, 1)), f.x), mix(h31(i + vec3(0, 1, 1)), h31(i + vec3(1, 1, 1)), f.x), f.y), f.z);
+}
+vec3 bump3y(vec3 x, vec3 yo) { return clamp(1.0 - x * x - yo, 0.0, 1.0); }
+vec3 spectral(float w) {
+  float x = clamp((w - 400.0) / 300.0, 0.0, 1.0);
+  vec3 c1 = vec3(3.54585104, 2.93225262, 2.41593945);
+  vec3 x1 = vec3(0.69549072, 0.49228336, 0.27699880);
+  vec3 y1 = vec3(0.02312639, 0.15225084, 0.52607955);
+  vec3 c2 = vec3(3.90307140, 3.21182957, 3.96587128);
+  vec3 x2 = vec3(0.11748627, 0.86755042, 0.66077860);
+  vec3 y2 = vec3(0.84897130, 0.88445281, 0.73949448);
+  return bump3y(c1 * (x - x1), y1) + bump3y(c2 * (x - x2), y2);
+}
+vec3 band(float lam) {
+  float window = smoothstep(380.0, 425.0, lam) * (1.0 - smoothstep(680.0, 780.0, lam));
+  if (window <= 0.0) return vec3(0.0);
+  return spectral(mix(SPECTRUM.x, SPECTRUM.y, clamp((lam - 380.0) / 400.0, 0.0, 1.0))) * window;
+}
+float boxDist(vec2 p, float b, float r, out vec2 grad) {
+  vec2 q = abs(p) - b + r;
+  vec2 m = max(q, 0.0);
+  float outside = length(m);
+  vec2 sg = vec2(p.x < 0.0 ? -1.0 : 1.0, p.y < 0.0 ? -1.0 : 1.0);
+  grad = outside > 0.0 ? sg * m / outside : sg * (q.x > q.y ? vec2(1.0, 0.0) : vec2(0.0, 1.0));
+  return outside + min(max(q.x, q.y), 0.0) - r;
+}
+
 vec3 room(vec2 uv) {
   float aspect = uRes.x / uRes.y;
-  vec2 p = (uv - 0.5) * vec2(aspect, 1.0) * 1.15;
-  // uTurn: the camera turns along the wall as the page moves from Hero to About.
-  vec2 g = cylinderWall(p) * 6.5 + vec2(uTime * 0.02 + uTurn, 0.0);
-  float major = gridLines(g, 0.25);
-  float minor = gridLines(g * 5.0, 0.0);
+  vec2 s = (uv - 0.5) * vec2(aspect, 1.0);
+  // Tiles on the curved wall; uTurn: the camera turns along it from Hero to About.
+  vec2 g = cylinderWall(s * 1.15) * TILES + vec2(uTurn * 1.4, 0.0);
+  vec2 id = floor(g);
+  vec2 f = g - id - 0.5;
+  float h1 = h21(id), h2 = h21(id + 19.7), h3 = h21(id + 41.3);
 
-  vec2 q = (uv - uGlow) * vec2(aspect, 1.0);
-  float glow = exp(-dot(q, q) * 7.0) * mix(1.0, 0.8, uMood);
-  float halo = exp(-dot(q, q) * 1.8);
-  float breathe = 0.85 + 0.15 * sin(uTime * 0.35);
-  vec2 q2 = (uv - vec2(0.18, 0.15)) * vec2(aspect, 1.0);
-  float low = exp(-dot(q2, q2) * 2.5);
+  vec2 grad;
+  float half_ = 0.5 - 0.5 * GAP;
+  float d = boxDist(f, half_, ROUND * half_, grad);
+  float aa = 1.2 * max(fwidth(g.x), fwidth(g.y));
+  float cover = 1.0 - smoothstep(-aa, aa, d);
+  float edge = smoothstep(-0.02 - 0.07 * BEVEL, 0.0, d) * BEVEL;
+  float inner = smoothstep(0.0, -0.09, d);
+  vec3 N = normalize(vec3((vec2(h2, h3) - 0.5) * (0.5 * TILT) + grad * edge * 0.55, 1.0));
 
-  // uMood 0 → 1: hero violet cools to a deep indigo for About.
-  vec3 violet = mix(vec3(0.34, 0.19, 0.95), vec3(0.15, 0.16, 0.62), uMood);
-  vec3 col = vec3(0.010, 0.009, 0.020);
-  col += violet * (glow * 0.13 * breathe + halo * 0.04) + vec3(0.03, 0.05, 0.22) * low * 0.14;
-  col += (major * 0.32 + minor * 0.05) * (vec3(0.055, 0.05, 0.09) + violet * (glow * 0.9 + halo * 0.25));
-  // Stage-light beams: soft shafts fanning down from above the frame, each drifting and
-  // tilting slowly. They give the glass bright, sharp-edged detail to bend (a smooth
-  // gradient seen through glass just looks tinted), and light up the grid they cross.
-  float beams = 0.0;
-  vec3 beamCol = vec3(0.0);
-  float top = 0.62 - p.y; // distance below the light source line
-  for (int i = 0; i < 5; i++) {
-    float fi = float(i);
-    float sx = (fi - 2.0) * 0.45 + 0.2 * sin(uTime * (0.06 + fi * 0.013) + fi * 1.7);
-    float tilt = 0.28 * sin(uTime * (0.045 + fi * 0.011) + fi * 2.3);
-    float x = p.x - sx - tilt * top;
-    float w = 0.05 + 0.04 * fract(fi * 0.618) + top * 0.06; // widens as it falls
-    float shaft = exp(-x * x / (w * w)) + 0.28 * exp(-x * x / (w * w * 10.0));
-    float b = shaft * mix(0.35, 1.0, smoothstep(1.4, 0.0, top)) * (0.6 + 0.4 * fract(fi * 0.37 + 0.2));
-    beams += b;
-    beamCol += b * mix(violet, vec3(0.42, 0.55, 1.0), fract(fi * 0.5 + 0.25));
+  // Diffraction: each tile has a groove direction (flow noise + per-tile scatter +
+  // a travelling ripple); light splits into spectral bands along it.
+  float t = 17.0 + uTime * 0.35;
+  float flow = vn3(vec3(s * 1.4, t * 0.05));
+  vec2 rc = vec2(0.15 + 0.22 * sin(t * 0.07), -0.05 + 0.16 * cos(t * 0.053));
+  float rip = sin(length(s - rc) * 26.0 - t * 1.2) * 0.5 + 0.5;
+  float phi = 6.2831853 * mix(flow, h1, SCATTER) + RIPPLE * 0.9 * rip;
+  vec3 T = vec3(cos(phi), sin(phi), 0.0);
+  T = normalize(T - dot(T, N) * N);
+  vec3 V = normalize(vec3(-s, EYE));
+  vec2 light = vec2(0.46 * aspect * cos(t * 0.29 + 0.4), 0.36 * sin(t * 0.41 + 1.1)) / EYE;
+  vec3 L = normalize(vec3(light, 1.0));
+  float D = 1450.0 * BANDS;
+  vec3 sh = vec3(0.0);
+  for (int k = 0; k < 3; k++) {
+    float a = float(k) * 2.39996 + 0.7;
+    vec3 Lk = normalize(vec3(light + vec2(cos(a), sin(a)) * sqrt((float(k) + 0.5) / 3.0) * SOFT, 1.0));
+    float x = abs(dot(Lk + V, T)) * D;
+    sh += band(x) + 0.6 * band(x * 0.5);
   }
-  // Haze: the shafts thicken and thin in slow drifting bands.
-  float haze = 0.75 + 0.25 * sin(p.y * 6.0 + p.x * 2.0 + uTime * 0.25) * sin(p.y * 2.3 - uTime * 0.17);
-  col += beamCol * haze * 0.55 * breathe;
-  col += (major * 0.6 + minor * 0.15) * beamCol * 0.8;
+  sh *= (0.62 + 0.38 * inner) / 3.0;
+  float lum = dot(sh, vec3(0.2126, 0.7152, 0.0722));
+  sh = mix(vec3(lum), sh, SATURATION);
+
+  vec3 H = normalize(L + V);
+  float ndh = max(dot(N, H), 0.0);
+  float wide = pow(ndh, 34.0);
+  float tight = pow(ndh, 700.0);
+  float pool = pow(max(1.0 - length(s - light * EYE) * 2.1, 0.0), 2.5) * SHEEN;
+
+  // Glitter: sparse twinkling specks (about 7.5 px cells).
+  vec2 gq = uv * uRes / 7.5;
+  vec2 gid = floor(gq);
+  float gh = h21(gid + 3.7);
+  float spark = 0.0;
+  vec3 sparkColor = vec3(1.0);
+  if (gh < 0.05 + 0.25 * GLITTER) {
+    vec2 o = vec2(h21(gid + 1.3), h21(gid + 5.9)) - 0.5;
+    float r = length(fract(gq) - 0.5 - o * 0.45);
+    vec3 gn = normalize(vec3((vec2(h21(gid + 9.1), h21(gid + 2.2)) - 0.5) * 0.7 + N.xy, 1.0));
+    float twinkle = 0.55 + 0.45 * sin(uTime * (2.0 + 5.0 * gh) + gh * 70.0);
+    spark = smoothstep(0.991, 0.9995, dot(gn, H)) * (1.0 - smoothstep(0.07, 0.24, r)) * twinkle * GLITTER;
+    sparkColor = spectral(420.0 + 100.0 * h21(gid + 7.7));
+  }
+
+  vec3 col = TILE + vec3(0.018, 0.018, 0.024);
+  col += METAL * (0.025 + 0.07 * wide + 1.1 * tight + 0.2 * pool) * (0.75 + 0.25 * inner);
+  col += sh * (1.65 * INTENSITY);
+  col += mix(sparkColor, vec3(1.0), 0.45) * spark * 2.4 * cover;
+  col = col * (1.0 + col / 5.0) / (1.0 + col * 0.55);
+  col = mix(SEAM, col, cover);
+  // Scrim: a soft dark band behind the name so its contrast never drops on a lit tile.
+  col *= 1.0 - 0.45 * exp(-pow((uv.y - 0.55) / 0.16, 2.0));
+
+  // uMood 0 to 1 (Hero to About): the wall dims.
+  col *= mix(1.0, 0.55, uMood);
   vec2 vig = uv - 0.5;
   col *= 1.0 - dot(vig, vig) * 0.9;
   // Slightly darker toward the bottom (under the intro text).
@@ -173,12 +272,14 @@ void main() {
   vec2 v = texture2D(uVel, vUv).xy;
   vec2 off = v * 0.00018; // how far the cursor fluid pushes the room
   float speed = length(off);
-  vec3 col = vec3(room(vUv - off).r, room(vUv - off * 1.3).g, room(vUv - off * 1.6).b);
+  // One sample (the mosaic is too costly to shade three times for a channel split).
+  vec3 col = room(vUv - off);
   // Thin iridescent sheen where the fluid is moving fast.
   vec3 hue = 0.5 + 0.5 * cos(6.2831 * (atan(v.y, v.x) / 6.2831 + vec3(0.0, 0.33, 0.67)));
   col += hue * smoothstep(0.0, 0.04, speed) * 0.035;
   gl_FragColor = vec4(col, 1.0);
 }`;
+
 
 // Screen: the room plus the name on top. The name is kept out of
 // the room texture so the glass can refract the room but leave the letters aligned.
@@ -482,12 +583,12 @@ export default function GlassD({ paused = false, dpr = 1.25, interactive = true,
       }
       last.set(pointer.x, pointer.y);
 
-      // Scroll pushes the field vertically under the cursor: the room "drags" with the page.
+      // Scroll only nudges the field (alche-calm: the wall stays still while you scroll).
       const sy = window.scrollY;
       const dScroll = sy - lastScroll;
       lastScroll = sy;
       if (dScroll !== 0) {
-        const f = Math.max(-1800, Math.min(1800, (dScroll / Math.max(dt, 1e-3)) * 0.35));
+        const f = Math.max(-200, Math.min(200, (dScroll / Math.max(dt, 1e-3)) * 0.05));
         addForce(pointer.x, pointer.y, 0, f);
       }
 
@@ -553,7 +654,8 @@ export default function GlassD({ paused = false, dpr = 1.25, interactive = true,
         lastInput = now;
       }
       if (dScroll !== 0) {
-        omega.y += (dScroll / window.innerHeight) * 5;
+        // A gentle turn with the scroll (a flick ≈ 40°), not a spin.
+        omega.y += (dScroll / window.innerHeight) * 1.2;
         lastInput = now;
       }
       omega.clampLength(0, 14);
