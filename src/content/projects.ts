@@ -24,7 +24,7 @@ export const projects: Project[] = [
       'Responses dashboard with a drop-off funnel',
     ],
     tech: ['Next.js', 'TypeScript', 'Supabase', 'Zustand', 'Zod', 'Vercel AI SDK', 'Gemini'],
-    links: { live: PLACEHOLDER, github: PLACEHOLDER },
+    links: { live: 'https://formsmith.vercel.app', github: 'https://github.com/Gupta-deepanshu/formsmith' },
     accent: '#9D8CFF',
     posterAlt: 'Formsmith form builder interface',
     caseStudy: {
@@ -69,7 +69,7 @@ export const projects: Project[] = [
       'Daily picks, genre aisles, decades, box sets, people and upcoming releases',
     ],
     tech: ['Next.js 16', 'React', 'TypeScript', 'TMDB API', 'Vercel AI SDK', 'Jest'],
-    links: { live: PLACEHOLDER, github: PLACEHOLDER },
+    links: { live: 'https://rewind-delta.vercel.app', github: 'https://github.com/Gupta-deepanshu/rewind' },
     accent: '#E4C25A',
     posterAlt: 'Rewind video-store shelf of VHS tapes',
     caseStudy: {
@@ -114,7 +114,7 @@ export const projects: Project[] = [
       'Player search and detailed player pages',
     ],
     tech: ['Next.js', 'React', 'TypeScript'],
-    links: { live: PLACEHOLDER, github: PLACEHOLDER },
+    links: { live: 'https://soul-ledger-taupe.vercel.app', github: 'https://github.com/Gupta-deepanshu/soul-ledger' },
     accent: '#7FD1C3',
     posterAlt: 'Soul Ledger Deadlock stats dashboard',
     caseStudy: {
