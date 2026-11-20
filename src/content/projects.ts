@@ -145,19 +145,19 @@ export const projects: Project[] = [
     slug: 'real-estate',
     title: 'Real Estate E-commerce',
     category: 'earlier',
-    oneLiner: 'Server-rendered apartment browsing built for SEO.',
+    oneLiner: 'Responsive apartment-browsing platform using Next.js and modular React.js components.',
     description:
-      'A real estate site for browsing apartments, server-rendered with Next.js for SEO and built from modular components.',
-    highlights: ['Next.js SSR listing pages for SEO', 'Modular, reusable components', 'Listings data from RapidAPI'],
+      'Responsive apartment-browsing platform using Next.js and modular React.js components.',
+    highlights: ['Responsive from phone to desktop', 'Modular, reusable React.js components', 'Listings data from RapidAPI'],
     tech: ['React', 'Next.js', 'Chakra UI', 'RapidAPI', 'Vercel'],
-    links: { live: PLACEHOLDER, github: PLACEHOLDER },
+    links: { live: 'https://realestate-website-six.vercel.app' },
     accent: '#8FA8FF',
-    posterAlt: 'Real estate listings page',
+    posterAlt: 'Realtor home page: a “Rental Homes for Everyone” hero above a grid of apartment listings with monthly price, beds, baths and size',
     short: {
       overview:
-        'An apartment browsing site where listing pages are server-rendered, so search engines index them and they load fast on first visit.',
+        'A responsive apartment-browsing platform using Next.js and modular React.js components. Each listing shows its monthly price, beds, baths and size.',
       built: [
-        'Server-rendered listing and detail pages with Next.js',
+        'Listing and detail pages built with Next.js',
         'Filterable listings backed by a RapidAPI property feed',
         'A modular component set styled with Chakra UI',
       ],
@@ -171,9 +171,9 @@ export const projects: Project[] = [
     description: 'A real-time cryptocurrency price tracker built with React Hooks and async REST API fetching.',
     highlights: ['Live prices from a REST API', 'Custom hooks for async data', 'Search and sort across coins'],
     tech: ['React', 'JavaScript', 'REST API'],
-    links: { live: PLACEHOLDER, github: PLACEHOLDER },
+    links: { live: 'https://tracker-cryptocurrency.netlify.app' },
     accent: '#5BD68B',
-    posterAlt: 'Cryptocurrency price table',
+    posterAlt: 'Cryptocurrency tracker: a “Search a currency” box above a table of coins (Bitcoin, Ethereum, Tether and more) with symbol, price, volume, 24-hour change and market cap',
     short: {
       overview: 'A price tracker that keeps coin prices fresh using React Hooks and asynchronous REST calls.',
       built: ['Async data fetching with hooks and loading/error states', 'Searchable, sortable price table'],

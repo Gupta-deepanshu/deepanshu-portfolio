@@ -11,10 +11,10 @@ export const site: Site = {
     'I’ve built enterprise deal-management interfaces, CMS-driven component libraries, and AI-powered developer tooling on MCP that cut deployment lead time by 40%.',
   ],
   facts: [
-    { value: '5+', label: 'years shipping production React' },
-    { value: '1M+', label: 'customers on pages I built' },
-    { value: '800+', label: 'stores running my inventory features' },
-    { value: '40%', label: 'faster deploys with my MCP assistant' },
+    { value: '5+', label: 'years building React apps' },
+    { value: '1M+', label: 'customers served by a website I build for' },
+    { value: '800+', label: 'stores using an inventory app I worked on' },
+    { value: '40%', label: 'faster deployments with an AI tool I built' },
   ],
   email: 'deepanshug.707@gmail.com',
   links: {

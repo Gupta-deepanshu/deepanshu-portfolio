@@ -14,7 +14,7 @@ export function Projects() {
             Things I’ve built on my own time.
           </h2>
           <p className="mt-6 max-w-xl text-muted" data-reveal="">
-            Three recent products, then earlier work. Scroll to turn the reel, use the arrow keys, or switch to a list.
+            Products I’ve designed and built end to end. Scroll through them, or view them as a list.
           </p>
         </div>
       </div>

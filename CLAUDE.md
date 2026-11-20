@@ -27,7 +27,7 @@ Dark, cinematic, scroll-driven "studio" feel (inspired by alche.studio, brandapp
 ## Content (edit without touching components)
 - `src/content/site.ts` — name, role, location, intro, summary, email, links (LinkedIn, GitHub, résumé at `public/Deepanshu_Gupta_Resume.pdf`), site url
 - `src/content/experience.ts`, `projects.ts` (6 projects, carousel order), `skills.ts`, `education.ts`
-- Placeholder values use the `PLACEHOLDER` sentinel. A placeholder link is never rendered as a broken link: disabled "Coming soon" or hidden.
+- Placeholder values use the `PLACEHOLDER` sentinel. A placeholder link is never rendered as a broken link: disabled "Coming soon" or hidden. A project with no public source omits `links.github` entirely: no GitHub pill.
 - Project media auto-detected from `public/projects/<slug>/` (poster image, optional muted loop video); otherwise a generated gradient/noise poster using the project accent + title.
 - Never show the phone number on the page. Email via mailto. (The downloadable résumé PDF does include it: the owner's choice.)
 
