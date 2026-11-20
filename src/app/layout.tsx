@@ -30,6 +30,12 @@ export const metadata: Metadata = {
   },
   twitter: { card: 'summary_large_image', title: site.seo.title, description: site.seo.description },
   robots: { index: true, follow: true },
+  other: {
+    // The site is already dark. This tells the Dark Reader extension to leave it alone
+    // instead of recolouring it on top (https://github.com/darkreader/darkreader).
+    // Any content works; Next drops a meta tag whose content is empty.
+    'darkreader-lock': 'true',
+  },
 };
 
 export const viewport: Viewport = {
