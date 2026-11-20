@@ -187,7 +187,7 @@ export const projects: Project[] = [
     description: 'A responsive multi-page travel website with client-side routing via React Router.',
     highlights: ['Multi-page routing with React Router', 'Responsive layouts from mobile to desktop'],
     tech: ['React', 'React Router', 'JavaScript'],
-    links: { live: 'https://react-travel-website01.netlify.app', github: PLACEHOLDER },
+    links: { live: 'https://react-travel-website01.netlify.app' },
     accent: '#F28FB0',
     posterAlt: 'TRVL travel site: an “Adventure Awaits” hero over a starry mountain sky, then destination cards such as an Amazon waterfall, the islands of Bali and a Sahara camel tour',
     short: {

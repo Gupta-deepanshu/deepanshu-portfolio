@@ -29,17 +29,16 @@ test('unknown project shows the not-found page', async ({ page }) => {
   await expect(page.locator('meta[name="robots"][content*="noindex"]')).toHaveCount(1);
 });
 
-test('placeholder links show "Coming soon" instead of linking', async ({ page }) => {
-  await page.goto('/projects/travel'); // live and GitHub links are still PLACEHOLDERs
-  const placeholders = page.locator('[data-placeholder]');
-  await expect(placeholders.first()).toBeVisible();
-  await expect(placeholders.first()).toContainText('Coming soon');
-  await expect(placeholders.first()).toHaveAttribute('aria-disabled', 'true');
-  // No anchor on the page points at the PLACEHOLDER sentinel.
-  expect(await page.locator('a[href*="PLACEHOLDER"]').count()).toBe(0);
+test('no link anywhere points at the PLACEHOLDER sentinel', async ({ page }) => {
+  // Every link is real today; a PLACEHOLDER added later must render as "Coming soon",
+  // never as a dead link.
+  for (const path of ['/', ...projects.map((p) => `/projects/${p.slug}`)]) {
+    await page.goto(path);
+    expect(await page.locator('a[href*="PLACEHOLDER"]').count(), path).toBe(0);
+  }
 });
 
-for (const slug of ['real-estate', 'crypto-tracker']) {
+for (const slug of ['real-estate', 'crypto-tracker', 'travel']) {
   test(`a project with no github link shows no GitHub pill at all (${slug})`, async ({ page }) => {
     await page.goto(`/projects/${slug}`);
     await expect(page.getByRole('link', { name: /Visit live site/ })).toBeVisible();
