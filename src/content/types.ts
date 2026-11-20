@@ -78,7 +78,8 @@ interface ProjectBase {
   description: string;
   highlights: string[];
   tech: string[];
-  links: { live: MaybeUrl; github: MaybeUrl };
+  /** Omit `github` for a project with no public source: no GitHub pill is shown. */
+  links: { live: MaybeUrl; github?: MaybeUrl };
   /** Hex colour used for the generated poster and project page accents. */
   accent: `#${string}`;
   /** Alt text for the poster / screenshot. */

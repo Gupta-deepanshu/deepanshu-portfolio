@@ -5,7 +5,8 @@ import { cn } from '@/lib/cn';
 import { PillSlot } from './PillLink';
 
 interface Props {
-  href: MaybeUrl;
+  /** undefined = no link at all (renders nothing), unlike a PLACEHOLDER, which shows "Coming soon". */
+  href: MaybeUrl | undefined;
   children: ReactNode;
   /** What to do while the URL is still a PLACEHOLDER. */
   whenMissing?: 'disable' | 'hide';
@@ -22,6 +23,7 @@ const placeholderClass =
  * becomes a disabled "Coming soon" control (or nothing), so there are no dead links.
  */
 export function LinkButton({ href, children, whenMissing = 'disable', download, className, icon }: Props) {
+  if (href === undefined) return null;
   const url = hrefOf(href);
   if (!url) {
     if (whenMissing === 'hide') return null;

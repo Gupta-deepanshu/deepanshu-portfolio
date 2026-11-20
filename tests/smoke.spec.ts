@@ -30,13 +30,19 @@ test('unknown project shows the not-found page', async ({ page }) => {
 });
 
 test('placeholder links show "Coming soon" instead of linking', async ({ page }) => {
-  await page.goto('/projects/real-estate'); // GitHub link is still a PLACEHOLDER
+  await page.goto('/projects/crypto-tracker'); // live and GitHub links are still PLACEHOLDERs
   const placeholders = page.locator('[data-placeholder]');
   await expect(placeholders.first()).toBeVisible();
   await expect(placeholders.first()).toContainText('Coming soon');
   await expect(placeholders.first()).toHaveAttribute('aria-disabled', 'true');
   // No anchor on the page points at the PLACEHOLDER sentinel.
   expect(await page.locator('a[href*="PLACEHOLDER"]').count()).toBe(0);
+});
+
+test('a project with no github link shows no GitHub pill at all', async ({ page }) => {
+  await page.goto('/projects/real-estate');
+  await expect(page.getByRole('link', { name: /Visit live site/ })).toBeVisible();
+  await expect(page.getByText(/GitHub/)).toHaveCount(0);
 });
 
 test('carousel keyboard navigation moves between projects (desktop)', async ({ page }) => {
