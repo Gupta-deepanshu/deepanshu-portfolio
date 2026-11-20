@@ -39,10 +39,18 @@ export const viewport: Viewport = {
 
 /**
  * Runs before first paint. Shows the intro only to first-time visitors with motion
- * allowed, and lets any click/key skip it. Everything else on the page is already
- * server-rendered underneath, so the loader never blocks content.
+ * allowed. Everything else on the page is already server-rendered underneath, so the
+ * loader never blocks content.
+ *
+ * data-intro: 'hold' (loader up, hero reveal paused) → 'out' (loader lifts, reveal
+ * plays) or 'skip' (click/key: fast lift). The hold ends when the hero scene reports
+ * its first frame ('hero:ready', sent by GlassD, or by WebGLBackground when there is
+ * no scene), but never before MIN_MS (no flash) and never after MAX_MS (a slow GPU
+ * must not keep content hidden).
  */
-const introScript = `try{var d=document.documentElement;if(!matchMedia('(prefers-reduced-motion: reduce)').matches&&!localStorage.getItem('intro-seen')&&location.pathname==='/'){d.setAttribute('data-intro','');localStorage.setItem('intro-seen','1');var s=function(){if(d.hasAttribute('data-intro'))d.setAttribute('data-intro','skip')};addEventListener('pointerdown',s,{once:true});addEventListener('keydown',s,{once:true});setTimeout(function(){d.removeAttribute('data-intro')},2600)}}catch(e){}`;
+const INTRO_MIN_MS = 600;
+const INTRO_MAX_MS = 1200;
+const introScript = `try{var d=document.documentElement;if(!matchMedia('(prefers-reduced-motion: reduce)').matches&&!localStorage.getItem('intro-seen')&&location.pathname==='/'){localStorage.setItem('intro-seen','1');d.setAttribute('data-intro','hold');var t=Date.now(),e=function(v){if(d.getAttribute('data-intro')==='hold')d.setAttribute('data-intro',v)},o=function(){e('out')},s=function(){e('skip')};addEventListener('hero:ready',function(){setTimeout(o,Math.max(0,${INTRO_MIN_MS}-(Date.now()-t)))},{once:true});setTimeout(o,${INTRO_MAX_MS});addEventListener('pointerdown',s,{once:true});addEventListener('keydown',s,{once:true})}}catch(e){}`;
 
 export default function RootLayout({ children }: LayoutProps<'/'>) {
   return (

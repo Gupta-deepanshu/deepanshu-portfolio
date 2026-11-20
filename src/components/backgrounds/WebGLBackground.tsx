@@ -13,7 +13,7 @@
  *   layer underneath simply remains visible.
  */
 import dynamic from 'next/dynamic';
-import { useRef, useSyncExternalStore, type ReactNode } from 'react';
+import { useEffect, useRef, useSyncExternalStore, type ReactNode } from 'react';
 import { useWebGLSlot } from '@/lib/gl-budget';
 import { useFinePointer, useIsDesktop, useReducedMotion, useWebGL2 } from '@/lib/media-query';
 import { cn } from '@/lib/cn';
@@ -47,6 +47,12 @@ export function WebGLBackground({ kind, staticClassName, staticContent, desktopO
   const slot = useWebGLSlot(ref, enabled, kind === 'glass');
   const paused = slot !== 'active';
   const dpr = desktop ? 1.25 : 0.75;
+
+  // No hero scene (mobile, no WebGL2): nothing to wait for, so release the loader now.
+  // Gated on `hydrated` because the hydration render still uses the server snapshots.
+  useEffect(() => {
+    if (kind === 'glass' && hydrated && !enabled) window.dispatchEvent(new Event('hero:ready'));
+  }, [kind, hydrated, enabled]);
 
   return (
     <div ref={ref} data-bg="" data-gl-slot={slotId} data-gl-state={slot} aria-hidden="true" className={className}>

@@ -100,7 +100,8 @@ body {
    The loader is pure CSS so it never waits for hydration. An inline script in
    <head> sets data-intro on <html> only for first-time visitors with motion
    allowed; without that attribute (returning visitor, reduced motion, no JS) the
-   loader never renders. Click or any key ends it early. */
+   loader never renders. It holds ('hold') until the hero scene is ready (capped,
+   see layout.tsx), then lifts ('out'); click or any key lifts it fast ('skip'). */
 .loader {
   display: none;
 }
@@ -111,11 +112,12 @@ html[data-intro] .loader {
   z-index: 100;
   place-items: center;
   background: var(--bg);
-  animation: loader-out 0.45s var(--ease-out) 0.75s forwards;
+}
+html[data-intro='out'] .loader {
+  animation: loader-out 0.45s var(--ease-out) forwards;
 }
 html[data-intro='skip'] .loader {
-  animation-delay: 0s;
-  animation-duration: 0.2s;
+  animation: loader-out 0.2s var(--ease-out) forwards;
 }
 .loader-name {
   font-family: var(--font-display);
@@ -161,8 +163,14 @@ html[data-intro='skip'] .loader {
   animation: char-in 1.1s var(--ease-out) forwards;
   animation-delay: calc(var(--i) * 32ms + 80ms);
 }
+/* Under the loader the reveal waits (paused, not removed: GlassD awaits these
+   animations' `finished` before copying the name into WebGL), then plays as it lifts. */
 html[data-intro] .hero-char {
-  animation-delay: calc(var(--i) * 32ms + 900ms);
+  animation-delay: calc(var(--i) * 32ms + 150ms);
+}
+html[data-intro='hold'] .hero-char,
+html[data-intro='hold'] .hero-fade {
+  animation-play-state: paused;
 }
 .hero-fade {
   opacity: 0;
@@ -170,7 +178,7 @@ html[data-intro] .hero-char {
   animation-delay: calc(var(--d, 0) * 1ms + 500ms);
 }
 html[data-intro] .hero-fade {
-  animation-delay: calc(var(--d, 0) * 1ms + 1300ms);
+  animation-delay: calc(var(--d, 0) * 1ms + 550ms);
 }
 html[data-intro='skip'] .hero-char {
   animation-delay: calc(var(--i) * 32ms);

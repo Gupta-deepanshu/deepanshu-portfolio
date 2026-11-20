@@ -356,7 +356,7 @@ export default function GlassD({ paused = false, dpr = 1.25, interactive = true,
     // A fresh canvas per mount: a canvas whose context was force-lost can't host a new one
     // (matters for Strict Mode's double effect in dev and for budget re-mounts).
     const canvas = document.createElement('canvas');
-    canvas.className = 'block size-full opacity-0 transition-opacity duration-1000 data-[ready]:opacity-100';
+    canvas.className = 'block size-full opacity-0 transition-opacity duration-[1600ms] ease-out data-[ready]:opacity-100'; // slow enough to read as light arriving when it lands after the text
     container.appendChild(canvas);
 
     let renderer: WebGLRenderer;
@@ -693,6 +693,7 @@ export default function GlassD({ paused = false, dpr = 1.25, interactive = true,
       if (firstFrame) {
         firstFrame = false;
         canvas.dataset.ready = '';
+        window.dispatchEvent(new Event('hero:ready')); // lets the first-visit loader lift (layout.tsx)
       }
       // Once the WebGL copy of the name is in, fade the HTML one (still in the DOM).
       if (h1 && textReady && textAlpha > 0 && !('glText' in h1.dataset)) h1.dataset.glText = '';
