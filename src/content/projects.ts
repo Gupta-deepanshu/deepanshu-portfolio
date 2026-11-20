@@ -71,7 +71,7 @@ export const projects: Project[] = [
     tech: ['Next.js 16', 'React', 'TypeScript', 'TMDB API', 'Vercel AI SDK', 'Jest'],
     links: { live: 'https://rewind-delta.vercel.app', github: 'https://github.com/Gupta-deepanshu/rewind' },
     accent: '#E4C25A',
-    posterAlt: 'Rewind video-store shelf of VHS tapes',
+    posterAlt: 'Rewind home page: today’s pick, The Beast, beside a 3D shelf of code-generated VHS tapes, above the New Arrivals aisle',
     caseStudy: {
       // DRAFT
       overview:
