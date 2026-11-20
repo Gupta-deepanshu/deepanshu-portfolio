@@ -9,5 +9,18 @@ export const mediaManifest: MediaManifest = {
   "real-estate": {
     "poster": "/projects/real-estate/poster.webp",
     "video": []
+  },
+  "travel": {
+    "poster": "/projects/travel/poster.webp",
+    "video": [
+      {
+        "src": "/projects/travel/loop.webm",
+        "type": "video/webm"
+      },
+      {
+        "src": "/projects/travel/loop.mp4",
+        "type": "video/mp4"
+      }
+    ]
   }
 };
