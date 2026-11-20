@@ -27,6 +27,7 @@ import type { CurvedReelHandle, ReelItem } from '@/components/three/CurvedReel';
 import DecryptedText from '@/components/reactbits/DecryptedText';
 import { LinkButton, Arrow } from '@/components/ui/LinkButton';
 import { NavButton } from '@/components/ui/NavButton';
+import { PillSlot } from '@/components/ui/PillLink';
 import { TransitionLink } from '@/components/ui/TransitionLink';
 import { EarlierLabel } from './ProjectCard';
 
@@ -186,11 +187,13 @@ export function PinnedGallery({ onFail }: { onFail: () => void }) {
                 <div className="mt-5 flex flex-wrap gap-2">
                   <TransitionLink
                     href={`/projects/${project.slug}`}
-                    className="group inline-flex items-center gap-2 rounded-full bg-fg px-5 py-2.5 text-sm font-medium text-bg transition-colors hover:bg-accent"
+                    className="pill pill-lg group"
                   >
-                    {project.category === 'featured' ? 'Read the case study' : 'View project'}
+                    <PillSlot>
+                      {project.category === 'featured' ? 'Read the case study' : 'View project'}
+                      <Arrow />
+                    </PillSlot>
                     <span className="sr-only">: {project.title}</span>
-                    <Arrow />
                   </TransitionLink>
                   <LinkButton href={project.links.live}>Live</LinkButton>
                   <LinkButton href={project.links.github}>GitHub</LinkButton>

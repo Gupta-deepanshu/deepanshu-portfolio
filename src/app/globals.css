@@ -154,8 +154,10 @@ html[data-intro='skip'] .loader {
   }
 }
 
-/* ---------------------------------------------------------- header pills
-   Slot hover (see PillLink.tsx): fill white, label rolls up, black copy rolls in.
+/* ---------------------------------------------------------------- pills
+   The site's buttons. Slot hover (see PillLink.tsx): fill white, label rolls up,
+   black copy rolls in. Sizes: .pill (header), .pill-lg (in-page), .pill-icon
+   (round, icon only: fill + colour swap, nothing to roll).
    Hover styles only on real hover devices (no sticky hover after a tap); keyboard
    focus gets the same state. Reduced motion: colour swap only, no roll. */
 .pill {
@@ -167,6 +169,7 @@ html[data-intro='skip'] .loader {
   padding: 0.625rem 1.25rem;
   font-family: var(--font-mono);
   font-size: 0.75rem;
+  font-weight: 400;
   letter-spacing: 0.06em;
   line-height: 1.25;
   color: var(--fg);
@@ -174,13 +177,35 @@ html[data-intro='skip'] .loader {
     background-color 0.3s var(--pill-ease),
     border-color 0.3s var(--pill-ease);
 }
+.pill-lg {
+  padding: 0.8rem 1.5rem;
+  font-size: 0.8rem;
+}
+.pill-icon {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+}
+.pill:disabled {
+  opacity: 0.35;
+  pointer-events: none;
+}
 .pill-slot {
   position: relative;
   display: block;
   transition: transform 0.3s var(--pill-ease);
 }
+.pill-text,
+.pill-text-hover {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+}
 .pill-text {
-  display: block;
   transition: opacity 0.3s var(--pill-ease);
 }
 .pill-text-hover {
@@ -199,6 +224,7 @@ html[data-intro='skip'] .loader {
   .pill:hover {
     background-color: #fff;
     border-color: #fff;
+    color: #000; /* content outside the slot (icons, the list toggle's switch) */
   }
   .pill:hover .pill-slot {
     transform: translateY(-100%);
@@ -213,6 +239,7 @@ html[data-intro='skip'] .loader {
 .pill:focus-visible {
   background-color: #fff;
   border-color: #fff;
+  color: #000;
 }
 .pill:focus-visible .pill-slot {
   transform: translateY(-100%);
@@ -232,10 +259,6 @@ html[data-intro='skip'] .loader {
   }
   .pill .pill-text {
     opacity: 1 !important;
-  }
-  .pill:hover .pill-text,
-  .pill:focus-visible .pill-text {
-    color: #000;
   }
 }
 

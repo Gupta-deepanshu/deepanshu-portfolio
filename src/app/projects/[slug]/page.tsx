@@ -62,7 +62,7 @@ export default async function ProjectPage({ params }: PageProps<'/projects/[slug
             </h1>
             <p className="mt-6 max-w-2xl text-xl text-fg/85 sm:text-2xl">{project.oneLiner}</p>
             <div className="mt-8 flex flex-wrap gap-2">
-              <LinkButton href={project.links.live} variant="solid">
+              <LinkButton href={project.links.live}>
                 Visit live site
               </LinkButton>
               <LinkButton href={project.links.github}>Source on GitHub</LinkButton>
@@ -131,7 +131,7 @@ function TechList({ project }: { project: Project }) {
 function Links({ project }: { project: Project }) {
   return (
     <div className="flex flex-wrap gap-2">
-      <LinkButton href={project.links.live} variant="solid">
+      <LinkButton href={project.links.live}>
         Live site
       </LinkButton>
       <LinkButton href={project.links.github}>GitHub</LinkButton>

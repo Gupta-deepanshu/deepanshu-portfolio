@@ -2,11 +2,11 @@ import type { ReactNode } from 'react';
 import type { MaybeUrl } from '@/content/types';
 import { hrefOf } from '@/lib/placeholder';
 import { cn } from '@/lib/cn';
+import { PillSlot } from './PillLink';
 
 interface Props {
   href: MaybeUrl;
   children: ReactNode;
-  variant?: 'solid' | 'ghost';
   /** What to do while the URL is still a PLACEHOLDER. */
   whenMissing?: 'disable' | 'hide';
   download?: boolean;
@@ -14,18 +14,14 @@ interface Props {
   icon?: ReactNode;
 }
 
-const base =
-  'group inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium transition-[background-color,color,border-color,opacity] duration-300';
-const variants = {
-  solid: 'bg-fg text-bg hover:bg-accent',
-  ghost: 'border border-line text-fg hover:border-fg',
-};
+const placeholderClass =
+  'inline-flex items-center gap-2 rounded-full border border-dashed border-line px-5 py-2.5 font-mono text-[0.8rem] tracking-[0.06em] text-muted cursor-not-allowed';
 
 /**
- * Link rendered as a button. A PLACEHOLDER href is never rendered as a link: it
+ * Link rendered as a pill button (slot hover, see PillLink). A PLACEHOLDER href is never rendered as a link: it
  * becomes a disabled "Coming soon" control (or nothing), so there are no dead links.
  */
-export function LinkButton({ href, children, variant = 'ghost', whenMissing = 'disable', download, className, icon }: Props) {
+export function LinkButton({ href, children, whenMissing = 'disable', download, className, icon }: Props) {
   const url = hrefOf(href);
   if (!url) {
     if (whenMissing === 'hide') return null;
@@ -35,7 +31,7 @@ export function LinkButton({ href, children, variant = 'ghost', whenMissing = 'd
         aria-disabled="true"
         data-placeholder=""
         title="Coming soon"
-        className={cn(base, 'cursor-not-allowed border border-dashed border-line text-muted', className)}
+        className={cn(placeholderClass, className)}
       >
         {children}
         <span className="font-mono text-[0.65rem] uppercase tracking-widest text-muted">Coming soon</span>
@@ -46,12 +42,14 @@ export function LinkButton({ href, children, variant = 'ghost', whenMissing = 'd
   return (
     <a
       href={url}
-      className={cn(base, variants[variant], className)}
+      className={cn('pill pill-lg group', className)}
       {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
       {...(download ? { download: '' } : {})}
     >
-      {children}
-      {icon ?? <Arrow external={external} />}
+      <PillSlot>
+        {children}
+        {icon ?? <Arrow external={external} />}
+      </PillSlot>
       {external && <span className="sr-only">(opens in a new tab)</span>}
     </a>
   );

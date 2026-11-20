@@ -1,5 +1,6 @@
 import { site } from '@/content/site';
 import { HeroScroll } from './HeroScroll';
+import { PillSlot } from '@/components/ui/PillLink';
 
 /**
  * Hero. The name is split into letters on the server and revealed with CSS
@@ -50,12 +51,14 @@ export function Hero() {
           <div className="hero-fade flex items-center gap-6" style={{ '--d': 300 } as React.CSSProperties}>
             <a
               href="#projects"
-              className="group inline-flex items-center gap-2 rounded-full bg-fg px-5 py-3 text-sm font-medium text-bg transition-colors hover:bg-accent"
+              className="pill pill-lg"
             >
-              Skip to projects
-              <svg aria-hidden="true" viewBox="0 0 16 16" className="size-3.5 rotate-90 transition-transform group-hover:translate-y-0.5">
-                <path d="M3 8h10M9 4l4 4-4 4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-              </svg>
+              <PillSlot>
+                Skip to projects
+                <svg aria-hidden="true" viewBox="0 0 16 16" className="size-3.5 rotate-90">
+                  <path d="M3 8h10M9 4l4 4-4 4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                </svg>
+              </PillSlot>
             </a>
             <a href="#about" className="hidden items-center gap-3 text-sm text-muted transition-colors hover:text-fg sm:inline-flex">
               <span className="scroll-cue relative block h-10 w-px overflow-hidden bg-line" aria-hidden="true" />

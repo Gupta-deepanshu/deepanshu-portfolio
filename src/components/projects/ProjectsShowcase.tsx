@@ -18,6 +18,7 @@ import { ScrollTrigger } from '@/lib/gsap';
 import { PinnedGallery } from './PinnedGallery';
 import { SwipeCarousel } from './SwipeCarousel';
 import { ProjectCard } from './ProjectCard';
+import { PillSlot } from '@/components/ui/PillLink';
 
 type View = 'carousel' | 'list';
 
@@ -42,16 +43,18 @@ export function ProjectsShowcase() {
           type="button"
           onClick={toggle}
           aria-pressed={view === 'list'}
-          className="inline-flex items-center gap-3 rounded-full border border-line px-4 py-2 text-sm text-muted transition-colors hover:border-fg hover:text-fg"
+          className="pill pill-lg group flex items-center gap-3"
         >
-          <span aria-hidden="true" className="relative inline-flex h-4 w-7 rounded-full bg-line">
+          {/* The switch sits outside the rolling slot (Motion animates its knob); on hover
+              it follows the pill's black text colour via currentColor. */}
+          <span aria-hidden="true" className="relative inline-flex h-4 w-7 rounded-full bg-current/25">
             <motion.span
-              className="absolute top-0.5 size-3 rounded-full bg-fg"
+              className="absolute top-0.5 size-3 rounded-full bg-current"
               animate={{ x: view === 'list' ? 14 : 2 }}
               transition={{ type: 'spring', stiffness: 500, damping: 35 }}
             />
           </span>
-          View as list
+          <PillSlot>View as list</PillSlot>
         </button>
       </div>
 

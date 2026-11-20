@@ -30,7 +30,7 @@ export function Contact() {
               <CopyEmail email={site.email} />
               <LinkButton href={site.links.linkedin}>LinkedIn</LinkButton>
               <LinkButton href={site.links.github}>GitHub</LinkButton>
-              <LinkButton href={site.links.resume} variant="solid" download>
+              <LinkButton href={site.links.resume} download>
                 Download résumé
               </LinkButton>
             </div>
