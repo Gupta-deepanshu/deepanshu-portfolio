@@ -26,7 +26,7 @@ export const projects: Project[] = [
     tech: ['Next.js', 'TypeScript', 'Supabase', 'Zustand', 'Zod', 'Vercel AI SDK', 'Gemini'],
     links: { live: 'https://formsmith.vercel.app', github: 'https://github.com/Gupta-deepanshu/formsmith' },
     accent: '#9D8CFF',
-    posterAlt: 'Formsmith form builder interface',
+    posterAlt: 'Formsmith landing page: “Describe a form. Get a form.” above a plain-English description being turned into a customer feedback form',
     caseStudy: {
       // DRAFT
       overview:

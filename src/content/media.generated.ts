@@ -6,6 +6,19 @@ export const mediaManifest: MediaManifest = {
     "poster": "/projects/crypto-tracker/poster.webp",
     "video": []
   },
+  "formsmith": {
+    "poster": "/projects/formsmith/poster.webp",
+    "video": [
+      {
+        "src": "/projects/formsmith/loop.webm",
+        "type": "video/webm"
+      },
+      {
+        "src": "/projects/formsmith/loop.mp4",
+        "type": "video/mp4"
+      }
+    ]
+  },
   "real-estate": {
     "poster": "/projects/real-estate/poster.webp",
     "video": []
