@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { site } from '@/content/site';
 import { hrefOf } from '@/lib/placeholder';
-import FoldText from '@/components/reactbits/FoldText';
+import { PillLink } from '@/components/ui/PillLink';
 
 const nav = [
   { href: '/#about', label: 'About' },
@@ -10,9 +10,9 @@ const nav = [
 ];
 
 /**
- * alche.studio-style header: wordmark on the left, plain mono links centred,
- * an outlined Contact pill on the right. A soft gradient (not a bar) keeps the
- * links readable over whatever scrolls underneath.
+ * alche.studio-style header: wordmark on the left, outlined pills centred and on
+ * the right (slot hover, see PillLink). A soft gradient (not a bar) keeps them
+ * readable over whatever scrolls underneath.
  */
 export function Header() {
   const resume = hrefOf(site.links.resume);
@@ -30,46 +30,25 @@ export function Header() {
         </Link>
 
         <nav aria-label="Primary" className="pointer-events-auto hidden md:block">
-          <ul className="flex items-center gap-10 font-mono text-[0.8rem] tracking-[0.06em]">
+          <ul className="flex items-center gap-2">
             {nav.map((item) => (
-              <li key={item.href}>
-                <Link href={item.href} className="text-fg/80 transition-colors hover:text-accent">
-                  {/* Letters re-fold on hover/focus. Inherits the link's type so the nav's
-                      mono size, weight and tracking are unchanged; accessible name comes
-                      from FoldText's sr-only copy (the folding letters are aria-hidden). */}
-                  <FoldText
-                    text={item.label}
-                    trigger="hover"
-                    hinge="top"
-                    duration={0.5}
-                    stagger={0.03}
-                    perspective={300}
-                    creaseShading={0.35}
-                    fontSize="inherit"
-                    fontWeight="inherit"
-                    style={{ letterSpacing: 'inherit', lineHeight: 'inherit' }}
-                  />
-                </Link>
+              <li key={item.href} className="flex">
+                <PillLink href={item.href}>{item.label}</PillLink>
               </li>
             ))}
           </ul>
         </nav>
 
-        <div className="pointer-events-auto flex items-center justify-end gap-3">
-          <Link href="/#projects" className="font-mono text-[0.8rem] tracking-[0.06em] text-fg/80 transition-colors hover:text-accent md:hidden">
+        <div className="pointer-events-auto flex items-center justify-end gap-2">
+          <PillLink href="/#projects" className="md:hidden">
             Work
-          </Link>
+          </PillLink>
           {resume && (
-            <a href={resume} download className="hidden font-mono text-[0.8rem] tracking-[0.06em] text-fg/80 transition-colors hover:text-accent sm:block">
+            <PillLink href={resume} download className="hidden sm:block">
               Résumé
-            </a>
+            </PillLink>
           )}
-          <Link
-            href="/#contact"
-            className="rounded-full border border-fg/50 px-5 py-2.5 font-mono text-[0.75rem] tracking-[0.06em] text-fg transition-colors hover:border-accent hover:text-accent"
-          >
-            Contact
-          </Link>
+          <PillLink href="/#contact">Contact</PillLink>
         </div>
       </div>
     </header>
