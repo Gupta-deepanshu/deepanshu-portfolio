@@ -8,16 +8,18 @@
  *  1. Fluid sim (low-res, ping-pong half-float targets): the cursor and the scroll
  *     push velocity into it. Classic stable-fluids loop:
  *     advect → splat → divergence → pressure (Jacobi) → subtract gradient.
- *  2. Background pass → `bgTarget`: grid room + violet glow + the NAME. The fluid
- *     velocity offsets the UVs per colour channel, so the cursor leaves a smeared,
- *     chromatic trail through the grid and the letters.
- *  3. Screen: copy `bgTarget`, then draw the extruded D on top. Its shader samples
- *     `bgTarget` behind itself: magnified toward the centre, bent by a noise-
- *     perturbed ("liquid") normal, frosted in drifting patches (jittered multi-
- *     sampling), R/G/B at different offsets, plus an inner glow, thin-film colour
- *     at grazing angles, fresnel rim and specular. No transmission pass or env map.
+ *  2. Background pass → `bgTarget`: the ROOM only (grid, lit panels, violet glow).
+ *     The fluid velocity offsets the UVs per colour channel, so the cursor leaves a
+ *     smeared, chromatic trail through the grid.
+ *  3. Screen: composite `bgTarget` + the NAME, then draw the extruded D on top. Its
+ *     shader (glass.ts) refracts `bgTarget` per flat facet, brightens it, frosts it in
+ *     crinkled patches, and splits colour on the chamfers. It draws the name itself
+ *     (GLASS_TEXT) WITHOUT the facet bend: light through a flat parallel slab barely
+ *     shifts, so the letters stay aligned with the ones outside the glass and only
+ *     the chamfers bend them, while frost sprays their edges into grain. That is why
+ *     the name is kept out of the room texture. No transmission pass or env map.
  *
- * Why the name is drawn in WebGL: the glass has to refract it, and the canvas can't
+ * Why the name is drawn in WebGL: the glass has to show it, and the canvas can't
  * be both behind and in front of HTML. The <h1> stays the source of truth: its
  * letters are measured where the browser laid them out and copied into a texture
  * (same font, same positions), then the <h1> fades to opacity 0 — still in the DOM
@@ -51,7 +53,7 @@ import {
 } from 'three';
 import { whenIdle } from '@/lib/idle';
 import { QUAD_VERT, ROOM_CHUNK } from './room';
-import { createD, GLASS_FRAG, GLASS_VERT } from './glass';
+import { createD, GLASS_FRAG, GLASS_VERT, TEXT_CHUNK } from './glass';
 
 interface Props {
   paused?: boolean;
@@ -116,7 +118,6 @@ void main() {
 
 const BACKGROUND = /* glsl */ `
 uniform sampler2D uVel; uniform vec2 uRes; uniform float uTime; uniform float uMood; uniform float uTurn; uniform vec2 uGlow;
-uniform sampler2D uText; uniform vec4 uTextRect; uniform float uTextAlpha;
 varying vec2 vUv;
 ${ROOM_CHUNK}
 
@@ -138,8 +139,29 @@ vec3 room(vec2 uv) {
   // uMood 0 → 1: hero violet cools to a deep indigo for About.
   vec3 violet = mix(vec3(0.34, 0.19, 0.95), vec3(0.15, 0.16, 0.62), uMood);
   vec3 col = vec3(0.010, 0.009, 0.020);
-  col += violet * (glow * 0.3 * breathe + halo * 0.07) + vec3(0.03, 0.05, 0.22) * low * 0.18;
+  col += violet * (glow * 0.13 * breathe + halo * 0.04) + vec3(0.03, 0.05, 0.22) * low * 0.14;
   col += (major * 0.32 + minor * 0.05) * (vec3(0.055, 0.05, 0.09) + violet * (glow * 0.9 + halo * 0.25));
+  // Stage-light beams: soft shafts fanning down from above the frame, each drifting and
+  // tilting slowly. They give the glass bright, sharp-edged detail to bend (a smooth
+  // gradient seen through glass just looks tinted), and light up the grid they cross.
+  float beams = 0.0;
+  vec3 beamCol = vec3(0.0);
+  float top = 0.62 - p.y; // distance below the light source line
+  for (int i = 0; i < 5; i++) {
+    float fi = float(i);
+    float sx = (fi - 2.0) * 0.45 + 0.2 * sin(uTime * (0.06 + fi * 0.013) + fi * 1.7);
+    float tilt = 0.28 * sin(uTime * (0.045 + fi * 0.011) + fi * 2.3);
+    float x = p.x - sx - tilt * top;
+    float w = 0.05 + 0.04 * fract(fi * 0.618) + top * 0.06; // widens as it falls
+    float shaft = exp(-x * x / (w * w)) + 0.28 * exp(-x * x / (w * w * 10.0));
+    float b = shaft * mix(0.35, 1.0, smoothstep(1.4, 0.0, top)) * (0.6 + 0.4 * fract(fi * 0.37 + 0.2));
+    beams += b;
+    beamCol += b * mix(violet, vec3(0.42, 0.55, 1.0), fract(fi * 0.5 + 0.25));
+  }
+  // Haze: the shafts thicken and thin in slow drifting bands.
+  float haze = 0.75 + 0.25 * sin(p.y * 6.0 + p.x * 2.0 + uTime * 0.25) * sin(p.y * 2.3 - uTime * 0.17);
+  col += beamCol * haze * 0.55 * breathe;
+  col += (major * 0.6 + minor * 0.15) * beamCol * 0.8;
   vec2 vig = uv - 0.5;
   col *= 1.0 - dot(vig, vig) * 0.9;
   // Slightly darker toward the bottom (under the intro text).
@@ -147,29 +169,30 @@ vec3 room(vec2 uv) {
   return col;
 }
 
-vec4 text(vec2 uv) {
-  vec2 t = (uv - uTextRect.xy) / uTextRect.zw;
-  if (t.x < 0.0 || t.y < 0.0 || t.x > 1.0 || t.y > 1.0) return vec4(0.0);
-  return texture2D(uText, t) * vec4(1.0, 1.0, 1.0, uTextAlpha);
-}
-
 void main() {
   vec2 v = texture2D(uVel, vUv).xy;
-  vec2 off = v * 0.0003;
+  vec2 off = v * 0.00018; // how far the cursor fluid pushes the room
   float speed = length(off);
-  vec3 col = vec3(room(vUv - off).r, room(vUv - off * 1.6).g, room(vUv - off * 2.3).b);
+  vec3 col = vec3(room(vUv - off).r, room(vUv - off * 1.3).g, room(vUv - off * 1.6).b);
   // Thin iridescent sheen where the fluid is moving fast.
   vec3 hue = 0.5 + 0.5 * cos(6.2831 * (atan(v.y, v.x) / 6.2831 + vec3(0.0, 0.33, 0.67)));
-  col += hue * smoothstep(0.0, 0.04, speed) * 0.06;
-  // The name only drifts a touch with the fluid (no channel split): it must stay readable.
-  vec4 t = text(vUv - off * 0.12);
-  col = mix(col, t.rgb, t.a);
+  col += hue * smoothstep(0.0, 0.04, speed) * 0.035;
   gl_FragColor = vec4(col, 1.0);
 }`;
 
-const COPY = /* glsl */ `
-uniform sampler2D uTex; varying vec2 vUv;
-void main() { gl_FragColor = texture2D(uTex, vUv); }`;
+// Screen: the room plus the name on top. The name is kept out of
+// the room texture so the glass can refract the room but leave the letters aligned.
+const COMPOSITE = /* glsl */ `
+uniform sampler2D uTex; uniform sampler2D uVel;
+varying vec2 vUv;
+${TEXT_CHUNK}
+void main() {
+  vec3 col = texture2D(uTex, vUv).rgb;
+  // The name only drifts a touch with the fluid (no channel split): it must stay readable.
+  vec2 uv = vUv - texture2D(uVel, vUv).xy * 0.000036;
+  vec4 t = textAt(uv);
+  gl_FragColor = vec4(mix(col, t.rgb, t.a), 1.0);
+}`;
 
 /* ----------------------------------------------------------- name texture */
 
@@ -309,11 +332,10 @@ export default function GlassD({ paused = false, dpr = 1.25, interactive = true,
       uMood: { value: 0 },
       uTurn: { value: 0 },
       uGlow: { value: center },
-      uText: { value: textTexture },
-      uTextRect: { value: textRect },
-      uTextAlpha: { value: 0 },
     });
-    const copyMat = mat(COPY, { uTex: { value: bgTarget.texture } });
+    // Shared by the screen composite and the glass (same objects, set once per frame).
+    const textUniforms = { uText: { value: textTexture }, uTextRect: { value: textRect }, uTextAlpha: { value: 0 } };
+    const copyMat = mat(COMPOSITE, { uTex: { value: bgTarget.texture }, uVel: { value: null }, ...textUniforms });
 
     /* the D */
     const scene = new Scene();
@@ -323,7 +345,9 @@ export default function GlassD({ paused = false, dpr = 1.25, interactive = true,
     const glassMat = new ShaderMaterial({
       vertexShader: GLASS_VERT,
       fragmentShader: GLASS_FRAG,
+      defines: { GLASS_TEXT: '' },
       uniforms: {
+        ...textUniforms,
         uBg: { value: bgTarget.texture },
         uVel: { value: null },
         uRes: { value: res },
@@ -554,7 +578,8 @@ export default function GlassD({ paused = false, dpr = 1.25, interactive = true,
       bgMat.uniforms.uTime.value = time;
       bgMat.uniforms.uMood.value = t;
       bgMat.uniforms.uTurn.value = t * 1.6;
-      bgMat.uniforms.uTextAlpha.value = textAlpha * opacity;
+      textUniforms.uTextAlpha.value = textAlpha * opacity;
+      copyMat.uniforms.uVel.value = vel[0].texture;
       run(bgMat, bgTarget);
       renderer.setRenderTarget(null);
       renderer.clear();

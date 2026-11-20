@@ -27,7 +27,7 @@ import { gsap, MEDIA, useGSAP } from '@/lib/gsap';
 import { reelGlassFrame } from '@/components/three/reel-layout';
 
 // Same outline as the 3D geometry (GlassD) and the static SVG D.
-const D_PATH = 'M-0.75 -1 L0 -1 A1 1 0 0 1 0 1 L-0.75 1 Z M-0.32 -0.56 L0 -0.56 A0.56 0.56 0 0 1 0 0.56 L-0.32 0.56 Z';
+const D_PATH = 'M-0.75 -1 L0 -1 A1 1 0 0 1 0 1 L-0.75 1 Z M-0.4 -0.64 L0 -0.64 A0.64 0.64 0 0 1 0 0.64 L-0.4 0.64 Z';
 // Back face offset (gives the drawing its thickness) and the edges joining the faces.
 const DEPTH = { x: 0.09, y: -0.07 };
 const CORNERS: [number, number][] = [
@@ -36,9 +36,9 @@ const CORNERS: [number, number][] = [
   [0, 1],
   [0, -1],
   [1, 0],
-  [-0.32, -0.56],
-  [-0.32, 0.56],
-  [0.56, 0],
+  [-0.4, -0.64],
+  [-0.4, 0.64],
+  [0.64, 0],
 ];
 /** The SVG is 72vh tall and the D path spans 2 of its 2.5 viewBox units. */
 const D_HEIGHT_VH = 0.72 * (2 / 2.5);

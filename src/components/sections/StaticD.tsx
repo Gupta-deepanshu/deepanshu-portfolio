@@ -4,7 +4,7 @@
  * counter), centred behind the name. No animation, no JS.
  */
 export function StaticD() {
-  const d = 'M-0.75 -1 L0 -1 A1 1 0 0 1 0 1 L-0.75 1 Z M-0.32 -0.56 L0 -0.56 A0.56 0.56 0 0 1 0 0.56 L-0.32 0.56 Z';
+  const d = 'M-0.75 -1 L0 -1 A1 1 0 0 1 0 1 L-0.75 1 Z M-0.4 -0.64 L0 -0.64 A0.64 0.64 0 0 1 0 0.64 L-0.4 0.64 Z';
   return (
     <div className="static-d absolute inset-0">
       <div className="bg-room absolute inset-0" />
