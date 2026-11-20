@@ -145,7 +145,7 @@ export const projects: Project[] = [
     slug: 'real-estate',
     title: 'Real Estate E-commerce',
     category: 'earlier',
-    oneLiner: 'Responsive apartment browsing, built with Next.js.',
+    oneLiner: 'Responsive apartment-browsing platform using Next.js and modular React.js components.',
     description:
       'Responsive apartment-browsing platform using Next.js and modular React.js components.',
     highlights: ['Responsive from phone to desktop', 'Modular, reusable React.js components', 'Listings data from RapidAPI'],
