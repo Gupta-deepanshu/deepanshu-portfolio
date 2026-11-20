@@ -171,7 +171,7 @@ export const projects: Project[] = [
     description: 'A real-time cryptocurrency price tracker built with React Hooks and async REST API fetching.',
     highlights: ['Live prices from a REST API', 'Custom hooks for async data', 'Search and sort across coins'],
     tech: ['React', 'JavaScript', 'REST API'],
-    links: { live: 'https://tracker-cryptocurrency.netlify.app', github: PLACEHOLDER },
+    links: { live: 'https://tracker-cryptocurrency.netlify.app' },
     accent: '#5BD68B',
     posterAlt: 'Cryptocurrency tracker: a “Search a currency” box above a table of coins (Bitcoin, Ethereum, Tether and more) with symbol, price, volume, 24-hour change and market cap',
     short: {

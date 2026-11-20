@@ -30,7 +30,7 @@ test('unknown project shows the not-found page', async ({ page }) => {
 });
 
 test('placeholder links show "Coming soon" instead of linking', async ({ page }) => {
-  await page.goto('/projects/crypto-tracker'); // live and GitHub links are still PLACEHOLDERs
+  await page.goto('/projects/travel'); // live and GitHub links are still PLACEHOLDERs
   const placeholders = page.locator('[data-placeholder]');
   await expect(placeholders.first()).toBeVisible();
   await expect(placeholders.first()).toContainText('Coming soon');
@@ -39,11 +39,13 @@ test('placeholder links show "Coming soon" instead of linking', async ({ page })
   expect(await page.locator('a[href*="PLACEHOLDER"]').count()).toBe(0);
 });
 
-test('a project with no github link shows no GitHub pill at all', async ({ page }) => {
-  await page.goto('/projects/real-estate');
-  await expect(page.getByRole('link', { name: /Visit live site/ })).toBeVisible();
-  await expect(page.getByText(/GitHub/)).toHaveCount(0);
-});
+for (const slug of ['real-estate', 'crypto-tracker']) {
+  test(`a project with no github link shows no GitHub pill at all (${slug})`, async ({ page }) => {
+    await page.goto(`/projects/${slug}`);
+    await expect(page.getByRole('link', { name: /Visit live site/ })).toBeVisible();
+    await expect(page.getByText(/GitHub/)).toHaveCount(0);
+  });
+}
 
 test('carousel keyboard navigation moves between projects (desktop)', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
