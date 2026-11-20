@@ -11,7 +11,8 @@ export function Contact() {
       {/* Liquid Ether on desktop; on phones the animated CSS gradient keeps scrolling smooth. */}
       <WebGLBackground kind="ether" staticClassName="bg-contact-static" desktopOnly slotId="contact" />
       <div className="container-x">
-        <div className="scrim -mx-6 rounded-[3rem] px-6 py-10">
+        {/* Bleeds into the gutter, never past it (a fixed -mx-6 overflowed 375px phones). */}
+        <div className="scrim -mx-[min(1.5rem,var(--gutter))] rounded-[3rem] px-[min(1.5rem,var(--gutter))] py-10">
           <p className="eyebrow" data-reveal="">
             05 / Contact
           </p>

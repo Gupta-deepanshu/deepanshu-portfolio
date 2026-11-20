@@ -40,8 +40,8 @@ const CORNERS: [number, number][] = [
   [-0.4, 0.64],
   [0.64, 0],
 ];
-/** The SVG is 72vh tall and the D path spans 2 of its 2.5 viewBox units. */
-const D_HEIGHT_VH = 0.72 * (2 / 2.5);
+/** The D path spans 2 of the SVG's 2.5 viewBox units in height. */
+const D_OF_SVG = 2 / 2.5;
 
 export function OutlineStage({ children }: { children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -56,14 +56,18 @@ export function OutlineStage({ children }: { children: ReactNode }) {
         const vw = () => window.innerWidth;
         const vh = () => window.innerHeight;
         const wide = () => vw() / vh() >= 1.15;
+        // D height as a fraction of the viewport, from the SVG's laid-out size (72vh, or
+        // less on narrow screens where it is capped to fit the width; see the className).
+        // Computed style ignores the GSAP transform, so this is the unscaled size.
+        const dHeight = () => (parseFloat(getComputedStyle(d).height) * D_OF_SVG) / vh();
         // Where the glass D rests in About (GlassD: x = -0.7 / +0.58 of half-width,
         // body ≈ 31% / 21% of the viewport height).
         const aboutX = () => (wide() ? -0.35 : 0.29) * vw();
         const aboutY = () => (wide() ? 0 : -0.25) * vh();
-        const aboutScale = () => (wide() ? 0.31 : 0.21) / D_HEIGHT_VH;
+        const aboutScale = () => (wide() ? 0.31 : 0.21) / dHeight();
         // Where the reel's glass D sits once the stage is pinned (shared layout maths).
         const reel = () => reelGlassFrame(vw(), vh());
-        const reelScale = () => reel().height / D_HEIGHT_VH;
+        const reelScale = () => reel().height / dHeight();
 
         gsap.set(d, { x: aboutX, y: aboutY, scale: aboutScale, opacity: 0 });
 
@@ -149,7 +153,13 @@ export function OutlineStage({ children }: { children: ReactNode }) {
         <svg
           data-outline-d=""
           viewBox="-1.05 -1.25 2.3 2.5"
-          className="absolute inset-0 m-auto h-[72vh] w-[calc(72vh*0.92)] overflow-visible"
+          // 72vh tall, capped so the drawing fits the width with a margin on phones: the D
+          // and its depth edges span 1.84 of the 2.5 viewBox units of height, so the
+          // height may be at most (100vw - 3rem) * 2.5 / 1.84. Width keeps the viewBox ratio.
+          // Centred with left:50% + negative half-width margin, not inset-0 + m-auto: auto
+          // margins can't go negative, so a box wider than the screen (phones) pinned left
+          // and overflowed right. (transform is GSAP's, so no translate-based centring.)
+          className="absolute inset-y-0 left-1/2 my-auto -ml-[calc(var(--outline-h)*0.46)] h-(--outline-h) w-[calc(var(--outline-h)*0.92)] overflow-visible [--outline-h:min(72vh,calc((100vw-3rem)*1.36))]"
         >
           <g data-outline-inner="" fill="none" stroke="var(--accent)" strokeWidth="0.0055" strokeDasharray="100" strokeLinecap="round">
             <path data-face="front" d={D_PATH} pathLength={100} strokeDashoffset={100} strokeOpacity={0.8} />
