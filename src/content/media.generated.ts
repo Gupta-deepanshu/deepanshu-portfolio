@@ -23,6 +23,19 @@ export const mediaManifest: MediaManifest = {
       }
     ]
   },
+  "soul-ledger": {
+    "poster": "/projects/soul-ledger/poster.webp",
+    "video": [
+      {
+        "src": "/projects/soul-ledger/loop.webm",
+        "type": "video/webm"
+      },
+      {
+        "src": "/projects/soul-ledger/loop.mp4",
+        "type": "video/mp4"
+      }
+    ]
+  },
   "travel": {
     "poster": "/projects/travel/poster.webp",
     "video": [

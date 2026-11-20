@@ -116,7 +116,7 @@ export const projects: Project[] = [
     tech: ['Next.js', 'React', 'TypeScript'],
     links: { live: 'https://soul-ledger-taupe.vercel.app', github: 'https://github.com/Gupta-deepanshu/soul-ledger' },
     accent: '#7FD1C3',
-    posterAlt: 'Soul Ledger Deadlock stats dashboard',
+    posterAlt: 'Soul Ledger meta page: “The meta, kept in ink” above patch totals, hero standings with win-rate bars, and the biggest movers',
     caseStudy: {
       // DRAFT
       overview:
