@@ -81,7 +81,7 @@ for (const width of [1440, 375]) {
   });
 }
 
-test('skills: every group is real HTML; desktop deck pins and deals through all six', async ({ page }) => {
+test('skills: every group is real HTML; desktop carousel pins and turns through all six', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/');
   const section = page.locator('#skills');
@@ -95,4 +95,22 @@ test('skills: every group is real HTML; desktop deck pins and deals through all 
   await expect(groups.locator('[aria-current="step"]')).toContainText('Languages');
   await groups.getByRole('button', { name: /AI/ }).click();
   await expect(groups.locator('[aria-current="step"]')).toContainText('AI', { timeout: 5000 });
+});
+
+test('skills @ 375px: unpinned depth carousel moves by buttons and arrow keys, no horizontal overflow', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.goto('/');
+  const section = page.locator('#skills');
+  const top = await section.evaluate((el) => el.getBoundingClientRect().top + window.scrollY);
+  await scrollToY(page, top);
+  const counter = section.locator('[aria-live="polite"]');
+  await expect(counter).toContainText('01');
+  await section.getByRole('button', { name: 'Next skill group' }).click();
+  await expect(counter).toContainText('Frameworks');
+  await section.getByRole('group', { name: /Skill groups carousel/ }).focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(counter).toContainText('Styling');
+  await page.keyboard.press('ArrowLeft');
+  await expect(counter).toContainText('Frameworks');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375);
 });
