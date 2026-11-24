@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * Skills carousel: the six skill groups on a React Bits Depth Carousel rail (cards recede
+ * Skills carousel: the skill groups (src/content/skills.ts) on a React Bits Depth Carousel rail (cards recede
  * into depth, tilted, darker further back; see reactbits/depthPose). The cards are real
  * HTML (group heading + list), always in the DOM in reading order, never aria-hidden, so
  * nothing depends on the animation.
@@ -280,7 +280,7 @@ export function SkillCarousel() {
             onPointerCancel={mode === 'free' ? onPointerEnd : undefined}
             className={cn(
               carousel
-                ? 'relative h-[27rem] w-full touch-pan-y max-lg:overflow-x-clip select-none rounded-3xl [perspective:1000px] lg:h-[min(36rem,72vh)] lg:[perspective:1400px]'
+                ? 'relative h-[29rem] w-full touch-pan-y max-lg:overflow-x-clip select-none rounded-3xl [perspective:1000px] lg:h-[min(36rem,72vh)] lg:[perspective:1400px]'
                 : 'grid gap-4 sm:grid-cols-2 lg:grid-cols-3',
             )}
           >
@@ -294,7 +294,7 @@ export function SkillCarousel() {
                   className={cn(
                     'overflow-hidden rounded-2xl border border-line bg-[radial-gradient(circle_at_100%_0%,rgb(165_148_255/0.16),transparent_45%),linear-gradient(160deg,#1a1726_0%,#110f18_60%,#0d0c12_100%)] p-6 shadow-[0_30px_60px_-24px_rgb(0_0_0/0.8)]',
                     carousel &&
-                      'absolute left-[calc(50%-1.5rem)] top-1/2 h-[23rem] w-[min(18rem,calc(100%-5rem))] cursor-pointer will-change-transform [backface-visibility:hidden] lg:left-[38%] lg:h-[26rem] lg:w-[25rem] lg:p-9',
+                      'absolute left-[calc(50%-1.5rem)] top-1/2 h-[25rem] w-[min(18rem,calc(100%-5rem))] cursor-pointer will-change-transform [backface-visibility:hidden] lg:left-[38%] lg:h-[27.5rem] lg:w-[25rem] lg:p-9',
                   )}
                 >
                   <p className="relative flex justify-between font-mono text-xs uppercase tracking-[0.14em] text-muted">
@@ -306,10 +306,11 @@ export function SkillCarousel() {
                   <h3 id={`skill-group-${i}`} className={cn('relative mt-6 font-display text-2xl font-semibold uppercase', carousel && 'lg:text-3xl')}>
                     {g.label}
                   </h3>
-                  <ul className="relative mt-6 space-y-2">
+                  <ul className="relative mt-6 space-y-1.5 lg:space-y-2">
                     {g.items.map((s) => (
-                      <li key={s} className="flex items-center gap-3 font-display text-lg text-fg/90 lg:text-xl">
-                        <span aria-hidden="true" className="size-1.5 rounded-full bg-accent" />
+                      <li key={s} className="flex items-start gap-3 font-display text-base text-fg/90 lg:text-xl">
+                        {/* shrink-0 + top offset: long items wrap, and the dot stays a dot on the first line */}
+                        <span aria-hidden="true" className="mt-[0.6em] size-1.5 shrink-0 rounded-full bg-accent" />
                         {s}
                       </li>
                     ))}

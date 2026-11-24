@@ -3,7 +3,7 @@ import { SectionChoreography } from '@/components/motion/SectionChoreography';
 import { SkillCarousel } from '@/components/skills/SkillCarousel';
 
 /**
- * Skills: six skill-group cards on a React Bits Depth Carousel rail (SkillCarousel). On
+ * Skills: skill-group cards on a React Bits Depth Carousel rail (SkillCarousel). On
  * desktop the section pins and scroll turns the carousel once; on phones and with reduced
  * motion it's unpinned (swipe, buttons, arrow keys). Education is a quiet line under the
  * group index (after the cards on mobile).
