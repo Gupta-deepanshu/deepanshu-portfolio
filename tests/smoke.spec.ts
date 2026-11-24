@@ -1,4 +1,5 @@
 import { projects } from '../src/content/projects';
+import { skills } from '../src/content/skills';
 import { expect, markIntroSeen, scrollToY, test } from './fixtures';
 
 test.beforeEach(async ({ page }) => {
@@ -88,12 +89,13 @@ for (const width of [1440, 375]) {
   });
 }
 
-test('skills: every group is real HTML; desktop carousel pins and turns through all six', async ({ page }) => {
+test('skills: every group is real HTML; desktop carousel pins and turns through all groups', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/');
   const section = page.locator('#skills');
-  for (const label of ['Languages', 'Frameworks', 'Styling', 'APIs & CMS', 'Testing & tools', 'AI']) {
-    await expect(section.getByRole('heading', { level: 3, name: label })).toHaveCount(1);
+  for (const { label, items } of skills) {
+    await expect(section.getByRole('heading', { level: 3, name: label, exact: true })).toHaveCount(1);
+    for (const item of items) await expect(section).toContainText(item);
   }
   await expect(section).toContainText('B.Tech in Computer Science');
   const top = await section.evaluate((el) => el.getBoundingClientRect().top + window.scrollY);
